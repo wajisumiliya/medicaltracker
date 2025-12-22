@@ -4,7 +4,7 @@ import { RecordType, MedicineSlot } from '../types';
 // Audio Context for Alarm
 let audioCtx: AudioContext | null = null;
 
-const playAlarmSound = () => {
+const playAlarmSound = (urgent: boolean = false) => {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
@@ -15,15 +15,15 @@ const playAlarmSound = () => {
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
 
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-  oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+  oscillator.type = urgent ? 'square' : 'sine';
+  oscillator.frequency.setValueAtTime(urgent ? 880 : 440, audioCtx.currentTime);
+  oscillator.frequency.exponentialRampToValueAtTime(urgent ? 1760 : 880, audioCtx.currentTime + (urgent ? 0.3 : 0.5));
   
   gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (urgent ? 1.5 : 1));
 
   oscillator.start();
-  oscillator.stop(audioCtx.currentTime + 1);
+  oscillator.stop(audioCtx.currentTime + (urgent ? 1.5 : 1));
 };
 
 export const NotificationService = {
@@ -94,25 +94,48 @@ export const NotificationService = {
     const hour = now.getHours();
     const minutes = now.getMinutes();
     const medicines = await StorageService.getMedicines();
+    // Use the current date for medication checks
+    const todayStr = now.toISOString().split('T')[0];
 
-    // 1. Morning Logic: 11 AM - 12 PM (11:00 to 11:59)
-    // Check every 15 mins: 0, 15, 30, 45
+    // 1. Morning Logic: 11 AM - 12 PM
     if (hour === 11 && [0, 15, 30, 45].includes(minutes)) {
       const morningMeds = medicines.filter(m => m.schedule.morning);
-      // Need async filter helper or manual loop
       let pendingCount = 0;
       for (const m of morningMeds) {
-         const taken = await StorageService.isMedicineTakenToday(m.id, MedicineSlot.MORNING);
+         // Fix: Added missing todayStr argument
+         const taken = await StorageService.isMedicineTakenToday(m.id, MedicineSlot.MORNING, todayStr);
          if (!taken) pendingCount++;
       }
-
       if (pendingCount > 0) {
-        NotificationService.triggerAlarm('Morning Medicine Missed!', `You have ${pendingCount} morning medicines pending. Please take them now.`);
+        NotificationService.triggerAlarm('Morning Medicine Reminder!', `You have ${pendingCount} morning medicines pending.`, false);
       }
     }
 
-    // 2. Night Logic: 9:30 PM (21:30) - 11:45 PM (23:45)
-    // Check every 30 mins.
+    // 2. Afternoon Logic (Iron): 1 PM to 5 PM
+    // Reminder times: 3:30 PM (15:30), 4:00 PM (16:00), 4:30 PM (16:30)
+    const isAfternoonReminder = 
+      (hour === 15 && minutes === 30) || 
+      (hour === 16 && (minutes === 0 || minutes === 30));
+    
+    // Final Alarm: 4:45 PM (16:45)
+    const isAfternoonFinalAlarm = (hour === 16 && minutes === 45);
+
+    if (isAfternoonReminder || isAfternoonFinalAlarm) {
+      const afternoonMeds = medicines.filter(m => m.schedule.afternoon);
+      let pendingCount = 0;
+      for (const m of afternoonMeds) {
+         // Fix: Added missing todayStr argument
+         const taken = await StorageService.isMedicineTakenToday(m.id, MedicineSlot.AFTERNOON, todayStr);
+         if (!taken) pendingCount++;
+      }
+      if (pendingCount > 0) {
+        const title = isAfternoonFinalAlarm ? '🚨 FINAL AFTERNOON MEDICINE ALARM' : 'Afternoon Medicine Reminder';
+        const body = isAfternoonFinalAlarm ? 'LAST CALL! Take your afternoon medicine now!' : `You have ${pendingCount} afternoon medicine(s) pending. Take it before 5 PM.`;
+        NotificationService.triggerAlarm(title, body, isAfternoonFinalAlarm);
+      }
+    }
+
+    // 3. Night Logic: 9:30 PM - 11:45 PM
     const isNightCheckTime = 
        (hour === 21 && minutes === 30) ||
        (hour === 22 && (minutes === 0 || minutes === 30)) ||
@@ -122,12 +145,12 @@ export const NotificationService = {
       const nightMeds = medicines.filter(m => m.schedule.night);
       let pendingCount = 0;
       for (const m of nightMeds) {
-         const taken = await StorageService.isMedicineTakenToday(m.id, MedicineSlot.NIGHT);
+         // Fix: Added missing todayStr argument
+         const taken = await StorageService.isMedicineTakenToday(m.id, MedicineSlot.NIGHT, todayStr);
          if (!taken) pendingCount++;
       }
-
       if (pendingCount > 0) {
-        NotificationService.triggerAlarm('Night Medicine Missed!', `You have ${pendingCount} night medicines pending. Please take them now.`);
+        NotificationService.triggerAlarm('Night Medicine Reminder!', `You have ${pendingCount} night medicines pending.`, false);
       }
     }
   },
@@ -137,8 +160,6 @@ export const NotificationService = {
     const hour = now.getHours();
     const minutes = now.getMinutes();
 
-    // Check at 8:30 PM (20:30) strict.
-    // Also add follow ups at 9:00 PM and 9:30 PM if still not done.
     const isCheckTime = 
       (hour === 20 && minutes === 30) || 
       (hour === 21 && minutes === 0) || 
@@ -146,31 +167,27 @@ export const NotificationService = {
 
     if (isCheckTime) {
       const todayStr = now.toISOString().split('T')[0];
-      const items = await StorageService.getDailyNutItems(todayStr);
-      
-      // Target is 4 items (Almonds, Walnuts, Seeds, Dates)
+      const items = await StorageService.getDailyNutLogs(todayStr);
       if (items.length < 4) {
         const missingCount = 4 - items.length;
         NotificationService.triggerAlarm(
           'Daily Nuts Reminder 🥜', 
-          `It's ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}! You haven't finished your daily bowl yet. ${missingCount} items remaining.`
+          `It's ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}! ${missingCount} items remaining.`,
+          false
         );
       }
     }
   },
 
-  triggerAlarm: (title: string, body: string) => {
-    // 1. Play Sound
-    playAlarmSound();
-
-    // 2. Show Notification (if not recently shown to prevent spam in the exact same minute)
-    const key = `alarm_${title}_${new Date().getMinutes()}`;
+  triggerAlarm: (title: string, body: string, urgent: boolean = false) => {
+    playAlarmSound(urgent);
+    const key = `alarm_${title}_${new Date().getHours()}_${new Date().getMinutes()}`;
     if (!sessionStorage.getItem(key)) {
       new Notification(title, {
         body: body,
-        icon: '/vite.svg', // Fallback
         tag: 'health-alarm',
-        requireInteraction: true
+        requireInteraction: true,
+        icon: 'https://cdn-icons-png.flaticon.com/512/822/822143.png'
       });
       sessionStorage.setItem(key, 'true');
     }

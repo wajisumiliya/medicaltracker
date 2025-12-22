@@ -1,37 +1,60 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#fff5f7" />
+    <meta name="theme-color" content="#fffcfc" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Koala Baby Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #fff5f7; /* Soft baby pink background */
-        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
-        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+        background-color: #fafafa;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+        color: #1f2937;
       }
       h1, h2, h3, h4, h5, h6, .font-heading {
         font-family: 'Quicksand', sans-serif;
       }
-      /* Custom Scrollbar */
+      .Tamil-font {
+        font-family: 'Inter', 'Quicksand', sans-serif;
+        line-height: 1.6;
+      }
       ::-webkit-scrollbar {
-        width: 6px;
+        width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: transparent;
+        background: #f9fafb;
       }
       ::-webkit-scrollbar-thumb {
-        background: #fbcfe8; /* Pink-200 */
-        border-radius: 4px;
+        background: #e5e7eb;
+        border-radius: 10px;
+        border: 2px solid #f9fafb;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #f472b6; /* Pink-400 */
+        background: #d1d5db;
+      }
+
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-4px); }
+        75% { transform: translateX(4px); }
+      }
+      .animate-shake {
+        animation: shake 0.4s ease-in-out;
       }
     </style>
   <script type="importmap">

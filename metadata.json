@@ -1,5 +1,7 @@
 {
   "name": "Copy of Koala Baby Tracker",
   "description": "A specialized medical tracking and pregnancy dashboard for Sumaiya, featuring countdowns, medical logging, and AI assistance.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

@@ -1,18 +1,25 @@
+
 export enum RecordType {
   APPOINTMENT = 'Appointment',
-  VITALS = 'Vitals', // BP, Heart rate
   NOTE = 'Note',
   SYMPTOM = 'Symptom',
   VACCINATION = 'Vaccination',
-  GROWTH = 'Growth', // Weight, Length
   WATER = 'Water',
   MEDICINE = 'Medicine',
   NUTS = 'Nuts',
-  VOMIT = 'Vomit'
+  VOMIT = 'Vomit',
+  WEIGHT = 'Weight'
+}
+
+export enum EventStatus {
+  PENDING = 'Pending',
+  COMPLETED = 'Completed',
+  MISSED = 'Missed'
 }
 
 export enum MedicineSlot {
   MORNING = 'Morning',
+  AFTERNOON = 'Afternoon',
   NIGHT = 'Night'
 }
 
@@ -22,6 +29,7 @@ export interface Medicine {
   totalQty: number;
   schedule: {
     morning: boolean;
+    afternoon: boolean;
     night: boolean;
   };
 }
@@ -29,11 +37,14 @@ export interface Medicine {
 export interface MedicalRecord {
   id: string;
   date: string; // ISO Date string YYYY-MM-DD
+  time?: string; // HH:mm format
+  location?: string;
   timestamp?: string; // Full ISO timestamp for specific events
   type: RecordType;
   title: string;
   details: string;
-  value?: string; // e.g., "65kg" or "120/80"
+  value?: string; 
+  status?: EventStatus;
   medicineId?: string; // Link to medicine config
   medicineSlot?: MedicineSlot; // Morning or Night
 }
@@ -43,6 +54,7 @@ export interface User {
   role: 'admin' | 'user';
   isAuthenticated: boolean;
   lastLogin?: string;
+  profileImage?: string; // Base64 image string
 }
 
 export interface DateMetrics {
@@ -53,4 +65,15 @@ export interface DateMetrics {
   weeksLeft: number;
   daysLeftRemainder: number;
   progressPercentage: number;
+}
+
+export interface GroundingSource {
+  title: string;
+  uri: string;
+}
+
+export interface DailyInsights {
+  babyMessage: string;
+  doctorAdvice: string;
+  sources?: GroundingSource[];
 }

@@ -4,7 +4,8 @@ import { StorageService } from './storage';
 import { CloudService } from './cloud';
 
 const GEMINI_PROXY_URL =
-  'https://asia-southeast1-medicaltracker-family-2026.cloudfunctions.net/geminiProxy';
+  import.meta.env.VITE_GEMINI_PROXY_URL ||
+  'https://medicaltracker-ai.mohamedwajeethuali.workers.dev';
 
 const fallbackInsight=(profile:Profile):DailyFamilyInsight=>profile.id==='liyan'?{babyMessage:'அம்மா, உங்கள் குரலும் மென்மையான அணைப்பும் எனக்குப் பாதுகாப்பாக உணர வைக்கிறது. இன்று என்னுடன் இருப்பதற்கு நன்றி.',momAdvice:'லியானின் பசி மற்றும் தூக்க அறிகுறிகளைக் கவனித்து அதற்கேற்ப பராமரியுங்கள். காய்ச்சல், மூச்சுத் திணறல், சரியாகப் பால் குடிக்காமை அல்லது ஈரமான டயப்பர் குறைதல் இருந்தால் உடனடியாக மருத்துவரை அணுகுங்கள்.',generatedAt:new Date().toISOString(),source:'fallback'}:{babyMessage:'அம்மா, நான் தினமும் புதிய விஷயங்களைக் கற்றுக்கொள்கிறேன். நீங்கள் என்னுடன் பேசுவதும், கதை படிப்பதும், விளையாடுவதும் எனக்கு மிகவும் மகிழ்ச்சி தருகிறது.',momAdvice:'லியாவுக்கு தினமும் உடல் இயக்கம் நிறைந்த விளையாட்டு, உரையாடல், சீரான உணவு, போதுமான தூக்கம் மற்றும் பல் பராமரிப்பை வழங்குங்கள். உடல்நலம், வளர்ச்சி அல்லது முன்னேற்றம் குறித்து கவலை இருந்தால் மருத்துவரிடம் ஆலோசிக்கவும்.',generatedAt:new Date().toISOString(),source:'fallback'};
 
@@ -18,13 +19,13 @@ const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
-      'Authorization':`Bearer ${idToken}`
+      'Authorization':'Bearer '+idToken
     },
     body:JSON.stringify(payload)
   });
   if(response.status===401||response.status===403)throw new Error('CLOUD_AUTH_REQUIRED');
   if(response.status===429)throw new Error('429');
-  if(!response.ok)throw new Error(`GEMINI_PROXY_${response.status}`);
+  if(!response.ok)throw new Error('GEMINI_PROXY_'+response.status);
   return await response.json() as T;
 };
 
@@ -59,7 +60,7 @@ export const GeminiService={
  ask:async(question:string,profile:Profile,records:MedicalRecord[]):Promise<string>=>{
    if(StorageService.isQuotaExceeded())return 'The assistant is temporarily unavailable because its request limit was reached.';
    if(!CloudService.currentUser())return 'Sign in to Family Cloud Sync first to use the AI assistant securely.';
-   const context=records.slice(0,12).map(r=>`${r.date}: ${r.type} - ${r.title}${r.value!==undefined?` (${r.value} ${r.unit||''})`:''}; ${r.details}`).join('\n');
+   const context=records.slice(0,12).map(r=>r.date+': '+r.type+' - '+r.title+(r.value!==undefined?' ('+r.value+' '+(r.unit||'')+')':'')+'; '+r.details).join('\n');
    try{
      const result=await callGeminiProxy<{text:string}>({
        action:'ask',

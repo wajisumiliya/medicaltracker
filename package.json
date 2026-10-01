@@ -9,10 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-dom": "^19.2.0",
     "@google/genai": "^1.30.0",
+    "firebase": "12.4.0",
     "lucide-react": "^0.555.0",
-    "react": "^19.2.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.13.6"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isFamilyOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'hasanibooks.otp@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    match /families/koala-family/{document=**} {
+      allow read, create, update, delete: if isFamilyOwner();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,8 +1,8 @@
-const { onRequest } = require('firebase-functions/v2/https');
-const { defineSecret } = require('firebase-functions/params');
-const { initializeApp } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
-const { GoogleGenAI, Type } = require('@google/genai');
+import { onRequest } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
+import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { GoogleGenAI, Type } from '@google/genai';
 
 initializeApp();
 
@@ -33,7 +33,7 @@ function cleanString(value, maxLength) {
   return typeof value === 'string' ? value.slice(0, maxLength) : '';
 }
 
-exports.geminiProxy = onRequest(
+export const geminiProxy = onRequest(
   {
     region: 'asia-southeast1',
     cors: true,

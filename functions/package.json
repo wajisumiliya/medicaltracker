@@ -1,6 +1,7 @@
 {
   "name": "medicaltracker-functions",
   "private": true,
+  "type": "module",
   "main": "index.js",
   "engines": {
     "node": "20"

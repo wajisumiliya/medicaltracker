@@ -5,6 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#fffcfc" />
+    <meta name="description" content="Private health tracking for the whole family" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/app-icon.svg" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Koala Baby Tracker</title>
@@ -56,6 +60,104 @@
       .animate-shake {
         animation: shake 0.4s ease-in-out;
       }
+      @media (min-width: 1280px) {
+        .dashboard-fit {
+          grid-template-columns: repeat(12, minmax(0, 1fr));
+          align-items: start;
+        }
+        .dashboard-fit > * { grid-column: 1 / -1; }
+        .dashboard-child > section:nth-child(3) { grid-column: span 7; }
+        .dashboard-child > div:nth-child(4) { grid-column: span 5; }
+        .dashboard-liyan > section:nth-child(5) { grid-column: span 4; }
+        .dashboard-liyan > div:nth-child(6) { grid-column: span 8; }
+      }
+      @media (min-width: 1024px) and (max-height: 820px) {
+        .dashboard-fit { gap: 0.75rem; }
+        .dashboard-fit article { padding: 0.875rem; }
+        .dashboard-fit section > div { margin-top: 0; }
+      }
+      @media (max-width: 767px) {
+        .dashboard-fit {
+          gap: 0.75rem;
+        }
+        .dashboard-fit > section:first-child {
+          padding: 0.75rem;
+          flex-direction: row;
+          align-items: center;
+        }
+        .dashboard-fit > section:first-child img,
+        .dashboard-fit > section:first-child > div > div:first-child {
+          width: 3.25rem;
+          height: 3.25rem;
+        }
+        .dashboard-fit > section:first-child > button {
+          width: 2.75rem;
+          height: 2.75rem;
+          padding: 0;
+          flex: 0 0 auto;
+          font-size: 0;
+        }
+        .dashboard-fit > section:nth-child(2) > div:nth-child(2) {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.5rem;
+        }
+        .dashboard-fit > section:nth-child(2) > div:nth-child(2) > article {
+          min-width: 0;
+          padding: 0.75rem;
+        }
+        .dashboard-child > section:nth-child(3) > div:nth-child(2),
+        .dashboard-fit > div:last-of-type {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 0;
+          overflow: visible;
+        }
+        .dashboard-child > section:nth-child(3) > div:nth-child(2) > div,
+        .dashboard-fit > div:last-of-type > section {
+          min-width: 0;
+        }
+        .dashboard-fit > section:nth-child(2) h4 { font-size: 0.75rem; }
+        .dashboard-fit > section:nth-child(2) article > p.text-4xl,
+        .dashboard-fit > section:nth-child(2) article > p.text-3xl { font-size: 1.25rem; }
+        .dashboard-fit > section:nth-child(2) article .grid p:first-child { font-size: 0.75rem; }
+        .dashboard-fit > section:nth-child(2) article > .grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .dashboard-fit > section:nth-child(2) article > .grid > div:first-child {
+          grid-column: 1 / -1;
+        }
+        .dashboard-fit > section:nth-child(2) article > .grid > div:first-child p:first-child {
+          font-size: 1rem;
+          overflow: visible;
+          text-overflow: clip;
+        }
+        .dashboard-child > div:nth-child(4),
+        .dashboard-adult > div:nth-child(3) {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.5rem;
+        }
+        .dashboard-child > div:nth-child(4) > div,
+        .dashboard-adult > div:nth-child(3) > div {
+          padding: 0.75rem;
+          min-width: 0;
+        }
+        .dashboard-child > div:nth-child(4) > div > div:first-child,
+        .dashboard-adult > div:nth-child(3) > div > div:first-child {
+          width: 2rem;
+          height: 2rem;
+        }
+        .dashboard-child > div:nth-child(4) p:nth-of-type(1),
+        .dashboard-adult > div:nth-child(3) p:nth-of-type(1) {
+          margin-top: 0.5rem;
+          font-size: 0.55rem;
+        }
+        .dashboard-child > div:nth-child(4) p:nth-of-type(2),
+        .dashboard-adult > div:nth-child(3) p:nth-of-type(2) {
+          font-size: 0.8rem;
+          overflow-wrap: anywhere;
+        }
+      }
     </style>
   <script type="importmap">
 {
@@ -68,7 +170,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>

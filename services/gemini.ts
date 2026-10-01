@@ -1,114 +1,14 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
-import { DailyInsights, GroundingSource } from "../types";
-import { StorageService } from "./storage";
-
-export const GeminiService = {
-  getAIInstance: () => {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY });
-  },
-
-  askKoala: async (question: string, contextData: string): Promise<string> => {
-    if (StorageService.isQuotaExceeded()) {
-      return "The AI nursery is currently reaching its capacity limit. Please wait a few minutes or use your own API key to continue chatting.";
-    }
-
-    try {
-      const ai = GeminiService.getAIInstance();
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `User Question: ${question}\n\nContext about the user's pregnancy journey:\n${contextData}`,
-        config: {
-            systemInstruction: `You are "Koala AI", a gentle, supportive, and knowledgeable medical assistant for a pregnant woman named Sumaiya. 
-            Her due date is June 1st, 2026. Her pregnancy start date (LMP) was August 28, 2025.
-            Provide comforting, concise, and medically sound general advice (always disclaimer that you are an AI).
-            Keep tone warm, like a caring nurse or friend. Use emojis occasionally 🐨.`
-        }
-      });
-      return response.text || "I couldn't think of an answer right now.";
-    } catch (error: any) {
-      console.error("Gemini Error:", error);
-      const errorMsg = error?.message || "";
-      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
-        StorageService.setQuotaExceeded(60); // 1 minute cooldown
-        return "The nursery's AI quota is currently resting (429 Error). Please wait a few minutes or select a personal API key if you have one.";
-      }
-      return "I'm having trouble connecting to the medical database right now. Please try again later.";
-    }
-  },
-
-  getDailyInsights: async (week: number, day: number): Promise<DailyInsights | { error: string; status: number; retryAfter?: number } | null> => {
-    if (StorageService.isQuotaExceeded()) {
-      return { error: 'Quota Exhausted', status: 429 };
-    }
-
-    try {
-      const ai = GeminiService.getAIInstance();
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Today is Week ${week}, Day ${day} of Sumaiya's pregnancy journey.
-        Search for the latest medical guidelines and milestones for this stage.
-        Provide two detailed items in Tamil (தமிழ்):
-        1. A heart-touching message from the baby (Liya) to Sumaiya.
-        2. Professional medical advice for the mother's health based on current standards.
-        Return strictly in JSON format with "babyMessage" and "doctorAdvice" keys.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              babyMessage: { type: Type.STRING, description: "A message in Tamil from the baby." },
-              doctorAdvice: { type: Type.STRING, description: "Medical advice in Tamil for the week." }
-            },
-            required: ["babyMessage", "doctorAdvice"]
-          }
-        }
-      });
-
-      if (response.text) {
-        const insights = JSON.parse(response.text.trim()) as DailyInsights;
-        
-        const sources: GroundingSource[] = [];
-        const metadata = response.candidates?.[0]?.groundingMetadata;
-        const chunks = metadata?.groundingChunks;
-        
-        if (chunks) {
-          chunks.forEach((chunk: any) => {
-            if (chunk.web?.uri && chunk.web?.title) {
-              sources.push({
-                title: chunk.web.title,
-                uri: chunk.web.uri
-              });
-            }
-          });
-        }
-        
-        const uniqueSources = Array.from(new Set(sources.map(s => s.uri)))
-          .map(uri => sources.find(s => s.uri === uri))
-          .filter(Boolean) as GroundingSource[];
-
-        return { ...insights, sources: uniqueSources };
-      }
-      return null;
-    } catch (error: any) {
-      console.error("Failed to fetch daily insights:", error);
-      const errorMsg = error?.message || "";
-      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
-        // Parse retry delay from error if possible (some SDKs include it in details)
-        let retryAfter = 60;
-        try {
-          // Look for clues in the stringified error if structure is obscured
-          const delayMatch = errorMsg.match(/retry in ([\d\.]+)s/);
-          if (delayMatch && delayMatch[1]) {
-            retryAfter = Math.ceil(parseFloat(delayMatch[1])) + 2; // buffer
-          }
-        } catch (e) {}
-
-        StorageService.setQuotaExceeded(retryAfter);
-        return { error: 'Quota Exhausted', status: 429, retryAfter };
-      }
-      return null;
-    }
-  }
-};
+import { GoogleGenAI, Type } from '@google/genai';
+import { DailyFamilyInsight, MedicalRecord, Profile } from '../types';
+import { getAge, localDateString } from './date';
+import { StorageService } from './storage';
+const fallbackInsight=(profile:Profile):DailyFamilyInsight=>profile.id==='liyan'?{babyMessage:'அம்மா, உங்கள் குரலும் மென்மையான அணைப்பும் எனக்குப் பாதுகாப்பாக உணர வைக்கிறது. இன்று என்னுடன் இருப்பதற்கு நன்றி.',momAdvice:'லியானின் பசி மற்றும் தூக்க அறிகுறிகளைக் கவனித்து அதற்கேற்ப பராமரியுங்கள். காய்ச்சல், மூச்சுத் திணறல், சரியாகப் பால் குடிக்காமை அல்லது ஈரமான டயப்பர் குறைதல் இருந்தால் உடனடியாக மருத்துவரை அணுகுங்கள்.',generatedAt:new Date().toISOString(),source:'fallback'}:{babyMessage:'அம்மா, நான் தினமும் புதிய விஷயங்களைக் கற்றுக்கொள்கிறேன். நீங்கள் என்னுடன் பேசுவதும், கதை படிப்பதும், விளையாடுவதும் எனக்கு மிகவும் மகிழ்ச்சி தருகிறது.',momAdvice:'லியாவுக்கு தினமும் உடல் இயக்கம் நிறைந்த விளையாட்டு, உரையாடல், சீரான உணவு, போதுமான தூக்கம் மற்றும் பல் பராமரிப்பை வழங்குங்கள். உடல்நலம், வளர்ச்சி அல்லது முன்னேற்றம் குறித்து கவலை இருந்தால் மருத்துவரிடம் ஆலோசிக்கவும்.',generatedAt:new Date().toISOString(),source:'fallback'};
+const containsTamil=(value:unknown):value is string=>typeof value==='string'&&/[\u0B80-\u0BFF]/.test(value);
+export const GeminiService={
+ getDailyFamilyInsight:async(profile:Profile,force=false):Promise<DailyFamilyInsight>=>{const today=localDateString();if(!force){const cached=StorageService.getDailyInsight(profile.id,today);if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice))return cached;}const apiKey=process.env.API_KEY;if(!apiKey||StorageService.isQuotaExceeded()){const fallback=fallbackInsight(profile);StorageService.saveDailyInsight(profile.id,today,fallback);return fallback;}try{const ai=new GoogleGenAI({apiKey});const response=await ai.models.generateContent({model:'gemini-3-flash-preview',contents:`${profile.name}-க்கு இன்றைய ஆதரவான குறிப்பை உருவாக்கவும். குழந்தையின் தற்போதைய வயது: ${getAge(profile.birthDate)}. முழுப் பதிலும் இயல்பான, எளிய தமிழில் மட்டுமே இருக்க வேண்டும். ஆங்கில வாக்கியங்களைப் பயன்படுத்த வேண்டாம். ${profile.name} அம்மாவிடம் அன்பாகப் பேசுவது போன்ற ஒரு சிறிய கற்பனைச் செய்தியையும், வயதிற்கு ஏற்ற பொதுவான உடல்நல ஆலோசனையை அம்மாவுக்கு ஒரு சுருக்கமான பத்தியாகவும் வழங்கவும். நோயைக் கண்டறியவோ, மருந்தைப் பரிந்துரைக்கவோ, குழந்தைக்கான மருந்தளவைக் கூறவோ கூடாது.`,config:{responseMimeType:'application/json',responseSchema:{type:Type.OBJECT,properties:{babyMessage:{type:Type.STRING,description:'தமிழில் மட்டும் குழந்தை அம்மாவிடம் பேசுவது போன்ற செய்தி'},momAdvice:{type:Type.STRING,description:'தமிழில் மட்டும் அம்மாவுக்கான பொதுவான உடல்நல ஆலோசனை'}},required:['babyMessage','momAdvice']}}});const parsed=JSON.parse(response.text||'{}');if(!containsTamil(parsed.babyMessage)||!containsTamil(parsed.momAdvice))throw new Error('Gemini did not return Tamil');const insight:DailyFamilyInsight={babyMessage:parsed.babyMessage,momAdvice:parsed.momAdvice,generatedAt:new Date().toISOString(),source:'ai'};StorageService.saveDailyInsight(profile.id,today,insight);return insight;}catch(error:any){if(String(error?.message).includes('429'))StorageService.setQuotaExceeded(60);const fallback=fallbackInsight(profile);StorageService.saveDailyInsight(profile.id,today,fallback);return fallback;}},
+ ask:async(question:string,profile:Profile,records:MedicalRecord[]):Promise<string>=>{
+ if(StorageService.isQuotaExceeded())return 'The assistant is temporarily unavailable because its request limit was reached.';
+ const apiKey=process.env.API_KEY;if(!apiKey)return 'The AI assistant is not configured. Add GEMINI_API_KEY to .env.local and restart the app.';
+ const context=records.slice(0,12).map(r=>`${r.date}: ${r.type} - ${r.title}${r.value!==undefined?` (${r.value} ${r.unit||''})`:''}; ${r.details}`).join('\n');
+ try{const ai=new GoogleGenAI({apiKey});const response=await ai.models.generateContent({model:'gemini-3-flash-preview',contents:`Question: ${question}\n\nSelected profile: ${profile.name}, age ${getAge(profile.birthDate)}, allergies: ${profile.allergies||'not recorded'}.\nRecent records:\n${context||'No records yet.'}`,config:{systemInstruction:'You are a cautious family health information assistant. Give concise general information, not a diagnosis. Never calculate or recommend a child medicine dose. Encourage a qualified clinician for treatment decisions. Clearly advise urgent local medical care for breathing difficulty, seizure, blue lips, severe dehydration, unresponsiveness, or other emergency signs. Mention that AI can be wrong. Do not confuse records between profiles.'}});return response.text||'No response was available.';}catch(error:any){if(String(error?.message).includes('429'))StorageService.setQuotaExceeded(60);return 'I could not connect to the assistant. For urgent symptoms, contact a clinician or emergency service now.';}
+}};

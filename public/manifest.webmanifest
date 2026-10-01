@@ -1,0 +1,14 @@
+{
+  "name": "Koala Family Health Tracker",
+  "short_name": "Koala Family",
+  "description": "Private health tracking for the whole family.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f9fafb",
+  "theme_color": "#111827",
+  "icons": [
+    { "src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

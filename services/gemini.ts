@@ -69,7 +69,7 @@ export const GeminiService={
    const today=localDateString();
    if(!force){
      const cached=StorageService.getDailyInsight(profile.id,today);
-     if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice))return cached;
+     if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice)&&(cached.source==='ai'||!CloudService.currentUser()))return cached;
    }
    if(StorageService.isQuotaExceeded()||!CloudService.currentUser()){
      const fallback=dailyFallbackInsight(profile,today);

@@ -68,6 +68,17 @@ async function callWorkersAI(ai, prompt) {
   return typeof result?.response === 'string' ? result.response : JSON.stringify(result);
 }
 
+function parseAIJson(output) {
+  const text = String(output || '').trim();
+  try { return JSON.parse(text); } catch {}
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    try { return JSON.parse(text.slice(start, end + 1)); } catch {}
+  }
+  return {};
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return json({ ok: true });
@@ -89,9 +100,7 @@ export default {
           'Return only valid JSON with keys babyMessage and momAdvice.';
 
         const output = await callWorkersAI(env.AI, prompt);
-        let parsed = {};
-        try { parsed = JSON.parse(output); } catch {}
-        console.log('daily-ai-shape',JSON.stringify({keys:Object.keys(parsed),babyLength:typeof parsed.babyMessage==='string'?parsed.babyMessage.length:0,adviceLength:typeof parsed.momAdvice==='string'?parsed.momAdvice.length:0}));
+        const parsed = parseAIJson(output);
 
         return json({
           babyMessage: clean(parsed.babyMessage, 4000),
@@ -111,9 +120,7 @@ export default {
           'Return only valid JSON with keys question, options, correctIndex, and explanation.';
 
         const output = await callWorkersAI(env.AI, prompt);
-        let parsed = {};
-        try { parsed = JSON.parse(output); } catch {}
-        console.log('quiz-ai-shape',JSON.stringify({keys:Object.keys(parsed),questionLength:typeof parsed.question==='string'?parsed.question.length:0,optionCount:Array.isArray(parsed.options)?parsed.options.length:0,explanationLength:typeof parsed.explanation==='string'?parsed.explanation.length:0}));
+        const parsed = parseAIJson(output);
         const options = Array.isArray(parsed.options) ? parsed.options.slice(0, 4).map(value => clean(value, 500)) : [];
         const correctIndex = Number(parsed.correctIndex);
         if (options.length !== 4 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) {

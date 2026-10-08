@@ -119,6 +119,33 @@ export default {
         });
       }
 
+      if (action === 'islamicQuiz') {
+        const date = clean(body?.date, 20);
+        const prompt =
+          'தேதி: ' + date + '. குடும்பத்திற்காக ஒரு புதிய தினசரி இஸ்லாமிய பல்தேர்வு வினாவை உருவாக்கவும். ' +
+          'கேள்வி, நான்கு பதில் விருப்பங்கள், மற்றும் விளக்கம் அனைத்தும் இயல்பான எளிய தமிழில் மட்டுமே இருக்க வேண்டும். ' +
+          'குர்ஆன், நபிமார்கள், இஸ்லாமிய வரலாறு, வணக்கங்கள், நல்லொழுக்கம் போன்ற அடிப்படை தலைப்புகளில் இருந்து தேர்வு செய்யவும். ' +
+          'சர்ச்சைக்குரிய பிரிவினை கருத்துகள், அரசியல், மருத்துவ அல்லது சட்ட ஃபத்வாக்கள் வேண்டாம். ' +
+          'ஒரே ஒரு தெளிவான சரியான பதில் இருக்க வேண்டும். correctIndex பூஜ்ஜியத்திலிருந்து தொடங்கும் options பட்டியலின் சரியான இடமாக இருக்க வேண்டும். ' +
+          'தவறான பதிலைத் தேர்ந்தெடுத்தவரும் புரிந்துகொள்ளும் வகையில் explanation மூலம் உண்மையை சுருக்கமாக கற்பிக்கவும். ' +
+          'Return only valid JSON with keys question, options, correctIndex, and explanation.';
+
+        const output = await callGemini(env.GEMINI_API_KEY, prompt, true);
+        let parsed = {};
+        try { parsed = JSON.parse(output); } catch {}
+        const options = Array.isArray(parsed.options) ? parsed.options.slice(0, 4).map(value => clean(value, 500)) : [];
+        const correctIndex = Number(parsed.correctIndex);
+        if (options.length !== 4 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) {
+          return json({ error: 'Invalid quiz response' }, 502);
+        }
+        return json({
+          question: clean(parsed.question, 2000),
+          options,
+          correctIndex,
+          explanation: clean(parsed.explanation, 4000)
+        });
+      }
+
       if (action === 'ask') {
         const question = clean(body?.question, 4000);
         if (!question) return json({ error: 'Question is required' }, 400);

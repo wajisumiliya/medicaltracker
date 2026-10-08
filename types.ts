@@ -8,3 +8,4 @@ export interface User { name:string; role:'admin'|'user'; isAuthenticated:boolea
 export interface BackupData { version:2; exportedAt:string; profiles:Profile[]; records:MedicalRecord[]; medicines:Medicine[]; }
 export interface GroundingSource { title:string; uri:string; }
 export interface DailyFamilyInsight { babyMessage:string; momAdvice:string; generatedAt:string; source:'ai'|'fallback'; }
+export interface DailyIslamicQuiz { question:string; options:string[]; correctIndex:number; explanation:string; generatedAt:string; source:'ai'|'fallback'; }

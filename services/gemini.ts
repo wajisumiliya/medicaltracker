@@ -1,4 +1,4 @@
-import { DailyFamilyInsight, MedicalRecord, Profile } from '../types';
+import { DailyFamilyInsight, DailyIslamicQuiz, MedicalRecord, Profile } from '../types';
 import { getAge, localDateString } from './date';
 import { StorageService } from './storage';
 import { CloudService } from './cloud';
@@ -26,6 +26,15 @@ const dailyFallbackInsight=(profile:Profile,date:string):DailyFamilyInsight=>{
   return {...fallbackInsight(profile),babyMessage:dailyMessages[seed%dailyMessages.length]};
 };
 
+const fallbackQuizzes:Omit<DailyIslamicQuiz,'generatedAt'|'source'>[]=[
+ {question:'இஸ்லாமின் ஐந்து தூண்களில் முதலாவது எது?',options:['ஷஹாதா','ஜகாத்','ஹஜ்','நோன்பு'],correctIndex:0,explanation:'அல்லாஹ்வைத் தவிர வணக்கத்திற்குரியவன் யாருமில்லை என்றும் முஹம்மது நபி (ஸல்) அல்லாஹ்வின் தூதர் என்றும் சாட்சி கூறுவது ஷஹாதா. இதுவே இஸ்லாமின் முதல் தூண்.'},
+ {question:'ஒரு நாளில் முஸ்லிம்கள் எத்தனை நேரத் தொழுகைகளை நிறைவேற்றுகிறார்கள்?',options:['மூன்று','நான்கு','ஐந்து','ஆறு'],correctIndex:2,explanation:'ஃபஜ்ர், ளுஹர், அஸர், மஃரிப், இஷா என ஒரு நாளில் ஐந்து நேரத் தொழுகைகள் கடமையாகும்.'},
+ {question:'திருக்குர்ஆன் அருளப்பட்ட மாதம் எது?',options:['முஹர்ரம்','ரமழான்','ஷவ்வால்','ரஜப்'],correctIndex:1,explanation:'திருக்குர்ஆன் ரமழான் மாதத்தில் அருளப்பட்டது. இந்த மாதத்தில் முஸ்லிம்கள் நோன்பு நோற்கிறார்கள்.'},
+ {question:'முஸ்லிம்கள் தொழுகையில் எந்தத் திசையை நோக்குகிறார்கள்?',options:['மதீனா','ஜெருசலேம்','கஅபா','அரஃபா'],correctIndex:2,explanation:'மக்காவில் உள்ள புனித கஅபாவை நோக்கிய கிப்லா திசையில் முஸ்லிம்கள் தொழுகிறார்கள்.'},
+ {question:'ஹஜ் கடமை நிறைவேற்றப்படும் புனித நகரம் எது?',options:['மக்கா','மதீனா','கெய்ரோ','தமாஸ்கஸ்'],correctIndex:0,explanation:'உடல் மற்றும் பொருளாதார வசதி உள்ள முஸ்லிம்கள் வாழ்நாளில் ஒருமுறை மக்காவில் ஹஜ் கடமையை நிறைவேற்ற வேண்டும்.'}
+];
+const fallbackQuiz=(date:string):DailyIslamicQuiz=>{const day=Math.floor(new Date(`${date}T00:00:00`).getTime()/86400000);return {...fallbackQuizzes[Math.abs(day)%fallbackQuizzes.length],generatedAt:new Date().toISOString(),source:'fallback'};};
+
 const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
   const user=CloudService.currentUser();
   if(!user)throw new Error('CLOUD_SIGN_IN_REQUIRED');
@@ -45,6 +54,17 @@ const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
 };
 
 export const GeminiService={
+ getDailyIslamicQuiz:async(force=false):Promise<DailyIslamicQuiz>=>{
+   const today=localDateString();
+   if(!force){const cached=StorageService.getDailyIslamicQuiz(today);if(cached&&(cached.source==='ai'||!CloudService.currentUser()))return cached;}
+   if(StorageService.isQuotaExceeded()||!CloudService.currentUser()){const quiz=fallbackQuiz(today);StorageService.saveDailyIslamicQuiz(today,quiz);return quiz;}
+   try{
+     const parsed=await callGeminiProxy<{question:string;options:string[];correctIndex:number;explanation:string}>({action:'islamicQuiz',date:today});
+     if(!containsTamil(parsed.question)||!containsTamil(parsed.explanation)||!Array.isArray(parsed.options)||parsed.options.length!==4||parsed.options.some(option=>!containsTamil(option))||!Number.isInteger(parsed.correctIndex)||parsed.correctIndex<0||parsed.correctIndex>3)throw new Error('Invalid quiz response');
+     const quiz:DailyIslamicQuiz={...parsed,generatedAt:new Date().toISOString(),source:'ai'};
+     StorageService.saveDailyIslamicQuiz(today,quiz);return quiz;
+   }catch(error:any){if(String(error?.message).includes('429'))StorageService.setQuotaExceeded(60);const quiz=fallbackQuiz(today);StorageService.saveDailyIslamicQuiz(today,quiz);return quiz;}
+ },
  getDailyFamilyInsight:async(profile:Profile,force=false):Promise<DailyFamilyInsight>=>{
    const today=localDateString();
    if(!force){

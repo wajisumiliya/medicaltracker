@@ -1,4 +1,4 @@
-import { BackupData, DailyFamilyInsight, MedicalRecord, Medicine, Profile, ProfileKind, User } from '../types';
+import { BackupData, DailyFamilyInsight, DailyIslamicQuiz, MedicalRecord, Medicine, Profile, ProfileKind, User } from '../types';
 const RK='koala_records_v2', PK='koala_profiles_v2', MK='koala_medicines_v2', SK='koala_selected_profile_v2', UK='koala_current_session', IK='koala_global_profile_image', MIG='koala_v2_migrated', QK='koala_quota_error_ts', PIN='koala_pin_hash_v2';
 const defaults:Profile[]=[
  {id:'liya',name:'Liya',kind:ProfileKind.CHILD,birthDate:'2023-09-22',sex:'female',color:'#e11d48',allergies:'',notes:''},
@@ -10,6 +10,7 @@ const write=(key:string,value:unknown)=>localStorage.setItem(key,JSON.stringify(
 const changed=()=>window.dispatchEvent(new CustomEvent('koalaDataChanged'));
 const cloud=(detail:unknown)=>window.dispatchEvent(new CustomEvent('koalaCloudMutation',{detail}));
 const insightKey=(profileId:string,date:string)=>`koala_daily_insight_tamil_v4_${profileId}_${date}`;
+const quizKey=(date:string)=>`koala_daily_islamic_quiz_tamil_v1_${date}`;
 export const StorageService={
  initialize:()=>{if(!localStorage.getItem(PK))write(PK,defaults);else{const profiles=read<Profile[]>(PK,[]);const mom=profiles.find(profile=>profile.id==='sumaiya');if(mom){mom.birthDate='1998-06-09';mom.sex='female';}if(!profiles.some(profile=>profile.id==='wajeethu-ali'))profiles.push(defaults.find(profile=>profile.id==='wajeethu-ali')!);write(PK,profiles);}if(!localStorage.getItem(SK))localStorage.setItem(SK,'liyan');if(!localStorage.getItem(MIG)){const old=read<any[]>('koala_records_v1',[]);if(old.length&&!read<any[]>(RK,[]).length)write(RK,old.map(r=>({...r,profileId:'sumaiya',value:r.value===''||r.value===undefined?undefined:Number(r.value)})));const meds=read<any[]>('koala_medicine_config_v1',[]);if(meds.length&&!read<any[]>(MK,[]).length)write(MK,meds.map(m=>({id:m.id,profileId:'sumaiya',name:m.name,dosage:'',reason:'Migrated from pregnancy tracker',prescribingDoctor:'',startDate:'',reminderTimes:[]})));localStorage.setItem(MIG,new Date().toISOString());}},
  getUserData:():User|null=>{const u=read<User|null>(UK,null);if(u)u.profileImage=localStorage.getItem(IK)||undefined;return u;},getGlobalProfileImage:()=>localStorage.getItem(IK),
@@ -31,5 +32,7 @@ export const StorageService={
  getDailyInsight:(profileId:string,date:string):DailyFamilyInsight|null=>read<DailyFamilyInsight|null>(insightKey(profileId,date),null),
  saveDailyInsight:(profileId:string,date:string,insight:DailyFamilyInsight)=>write(insightKey(profileId,date),insight),
  clearDailyInsight:(profileId:string,date:string)=>localStorage.removeItem(insightKey(profileId,date)),
+ getDailyIslamicQuiz:(date:string):DailyIslamicQuiz|null=>read<DailyIslamicQuiz|null>(quizKey(date),null),
+ saveDailyIslamicQuiz:(date:string,quiz:DailyIslamicQuiz)=>write(quizKey(date),quiz),
  setQuotaExceeded:(s=60)=>localStorage.setItem(QK,String(Date.now()+s*1000)),isQuotaExceeded:()=>Number(localStorage.getItem(QK)||0)>Date.now(),generateId:()=>`${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`
 };

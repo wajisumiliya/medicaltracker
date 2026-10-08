@@ -11,6 +11,21 @@ const fallbackInsight=(profile:Profile):DailyFamilyInsight=>profile.id==='liyan'
 
 const containsTamil=(value:unknown):value is string=>typeof value==='string'&&/[\u0B80-\u0BFF]/.test(value);
 
+const dailyMessages = [
+  'ஒவ்வொரு நாளும் உங்கள் அன்பும் கவனமும் எனக்கு புதிய நம்பிக்கையைத் தருகிறது.',
+  'உங்கள் புன்னகையும் அரவணைப்பும் என் நாளை மகிழ்ச்சியாக்குகிறது.',
+  'நாம் இன்று பகிரும் சிறிய தருணங்கள் நாளைய இனிய நினைவுகளாகும்.',
+  'உங்கள் குரலைக் கேட்கும் ஒவ்வொரு முறையும் நான் பாதுகாப்பாக உணர்கிறேன்.',
+  'உங்களுடன் விளையாடியும் கற்றுக்கொண்டும் நான் ஒவ்வொரு நாளும் வளர்கிறேன்.',
+  'உங்கள் பொறுமையும் அன்பும் என் உலகத்தை அழகாக்குகிறது.',
+  'இன்று நாம் சேர்ந்து சிரிக்கும் நேரமே எனக்கு மிகப் பெரிய பரிசு.'
+];
+
+const dailyFallbackInsight=(profile:Profile,date:string):DailyFamilyInsight=>{
+  const seed=`${profile.id}-${date}`.split('').reduce((total,char)=>total+char.charCodeAt(0),0);
+  return {...fallbackInsight(profile),babyMessage:dailyMessages[seed%dailyMessages.length]};
+};
+
 const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
   const user=CloudService.currentUser();
   if(!user)throw new Error('CLOUD_SIGN_IN_REQUIRED');
@@ -37,7 +52,7 @@ export const GeminiService={
      if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice))return cached;
    }
    if(StorageService.isQuotaExceeded()||!CloudService.currentUser()){
-     const fallback=fallbackInsight(profile);
+     const fallback=dailyFallbackInsight(profile,today);
      StorageService.saveDailyInsight(profile.id,today,fallback);
      return fallback;
    }
@@ -52,7 +67,7 @@ export const GeminiService={
      return insight;
    }catch(error:any){
      if(String(error?.message).includes('429'))StorageService.setQuotaExceeded(60);
-     const fallback=fallbackInsight(profile);
+     const fallback=dailyFallbackInsight(profile,today);
      StorageService.saveDailyInsight(profile.id,today,fallback);
      return fallback;
    }

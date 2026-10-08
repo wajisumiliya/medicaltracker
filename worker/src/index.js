@@ -58,7 +58,7 @@ async function callWorkersAI(ai, prompt) {
     e.status = 500;
     throw e;
   }
-  const result = await ai.run('@cf/meta/llama-3.1-8b-instruct-fast', {
+  const result = await ai.run('@cf/meta/llama-3.1-8b-instruct-fp8', {
     messages: [
       { role: 'system', content: 'Return only valid JSON. Do not use Markdown code fences.' },
       { role: 'user', content: prompt }

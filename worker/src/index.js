@@ -52,47 +52,26 @@ async function verifyFirebaseUser(request) {
   }
 }
 
-async function callGemini(apiKey, prompt, jsonMode = false) {
-  const url =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' +
-    encodeURIComponent(apiKey);
-
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }]
-  };
-
-  if (jsonMode) {
-    body.generationConfig = { responseMimeType: 'application/json' };
+async function callWorkersAI(ai, prompt) {
+  if (!ai) {
+    const e = new Error('Workers AI binding is not configured');
+    e.status = 500;
+    throw e;
   }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+  const result = await ai.run('@cf/meta/llama-3.1-8b-instruct-fast', {
+    messages: [
+      { role: 'system', content: 'Return only valid JSON. Do not use Markdown code fences.' },
+      { role: 'user', content: prompt }
+    ],
+    response_format: { type: 'json_object' }
   });
-
-  if (response.status === 429) {
-    const e = new Error('Quota exceeded');
-    e.status = 429;
-    throw e;
-  }
-
-  if (!response.ok) {
-    const e = new Error('Gemini request failed');
-    e.status = 502;
-    throw e;
-  }
-
-  const data = await response.json();
-  return (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+  return typeof result?.response === 'string' ? result.response : JSON.stringify(result);
 }
 
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return json({ ok: true });
     if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-    if (!env.GEMINI_API_KEY) return json({ error: 'Server secret is not configured' }, 500);
-
     try {
       await verifyFirebaseUser(request);
       const body = await request.json();
@@ -109,7 +88,7 @@ export default {
           'நோயைக் கண்டறியவோ, மருந்தைப் பரிந்துரைக்கவோ, குழந்தைக்கான மருந்தளவைக் கூறவோ கூடாது. ' +
           'Return only valid JSON with keys babyMessage and momAdvice.';
 
-        const output = await callGemini(env.GEMINI_API_KEY, prompt, true);
+        const output = await callWorkersAI(env.AI, prompt);
         let parsed = {};
         try { parsed = JSON.parse(output); } catch {}
 
@@ -130,7 +109,7 @@ export default {
           'தவறான பதிலைத் தேர்ந்தெடுத்தவரும் புரிந்துகொள்ளும் வகையில் explanation மூலம் உண்மையை சுருக்கமாக கற்பிக்கவும். ' +
           'Return only valid JSON with keys question, options, correctIndex, and explanation.';
 
-        const output = await callGemini(env.GEMINI_API_KEY, prompt, true);
+        const output = await callWorkersAI(env.AI, prompt);
         let parsed = {};
         try { parsed = JSON.parse(output); } catch {}
         const options = Array.isArray(parsed.options) ? parsed.options.slice(0, 4).map(value => clean(value, 500)) : [];
@@ -144,27 +123,6 @@ export default {
           correctIndex,
           explanation: clean(parsed.explanation, 4000)
         });
-      }
-
-      if (action === 'ask') {
-        const question = clean(body?.question, 4000);
-        if (!question) return json({ error: 'Question is required' }, 400);
-
-        const name = clean(body?.profile?.name, 100) || 'selected profile';
-        const age = clean(body?.profile?.age, 100) || 'not provided';
-        const allergies = clean(body?.profile?.allergies, 500) || 'not recorded';
-        const context = clean(body?.context, 12000);
-
-        const prompt =
-          'You are a cautious family health information assistant. Give concise general information, not a diagnosis. ' +
-          'Never calculate or recommend a child medicine dose. Encourage a qualified clinician for treatment decisions. ' +
-          'Clearly advise urgent local medical care for breathing difficulty, seizure, blue lips, severe dehydration, unresponsiveness, or other emergency signs. ' +
-          'Mention that AI can be wrong. Do not confuse records between profiles.\n\n' +
-          'Question: ' + question + '\n\nSelected profile: ' + name + ', age ' + age + ', allergies: ' + allergies +
-          '.\nRecent records:\n' + (context || 'No records yet.');
-
-        const output = await callGemini(env.GEMINI_API_KEY, prompt, false);
-        return json({ text: clean(output, 12000) });
       }
 
       return json({ error: 'Unknown action' }, 400);

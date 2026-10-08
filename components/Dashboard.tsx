@@ -8,25 +8,25 @@ interface Props{profile:Profile;onNavigateToRegistry:()=>void;}
 interface TimeParts{days:number;hours:number;minutes:number;seconds:number;}
 const adultDailyQuotes:Record<string,{location:string;heading:string;quotes:string[]}>= {
  'sumaiya':{
-  location:'India',heading:'A thought for Mom',quotes:[
-   'Your love is the quiet strength that keeps the family close, no matter the distance.',
-   'The care you give in small moments becomes the warmth your children remember forever.',
-   'You do not have to finish everything today; your patience and presence are already enough.',
-   'Every peaceful moment you create at home is a gift to the whole family.',
-   'Your courage, kindness, and steady love make ordinary days feel safe and special.',
-   'Take a little time for yourself today; caring for you is part of caring for your family.',
-   'Across every mile, your love keeps the family connected and gives everyone strength.'
+  location:'இந்தியா',heading:'அம்மாவுக்கான இன்றைய சிந்தனை',quotes:[
+   'எவ்வளவு தூரம் இருந்தாலும், உங்கள் அன்பே குடும்பத்தை ஒன்றாக இணைக்கும் அமைதியான வலிமை.',
+   'சிறிய தருணங்களில் நீங்கள் காட்டும் அக்கறையே குழந்தைகள் என்றும் நினைவில் வைத்திருக்கும் அரவணைப்பாக மாறுகிறது.',
+   'இன்றே எல்லாவற்றையும் முடிக்க வேண்டியதில்லை; உங்கள் பொறுமையும் உடனிருப்பும் போதுமானவை.',
+   'வீட்டில் நீங்கள் உருவாக்கும் ஒவ்வொரு அமைதியான தருணமும் முழுக் குடும்பத்திற்குமான பரிசு.',
+   'உங்கள் தைரியம், கனிவு மற்றும் நிலையான அன்பு சாதாரண நாட்களையும் பாதுகாப்பான சிறப்பு நாட்களாக மாற்றுகின்றன.',
+   'இன்று உங்களுக்காகவும் சிறிது நேரம் எடுத்துக்கொள்ளுங்கள்; உங்களை கவனிப்பதும் குடும்பத்தை கவனிப்பதின் ஒரு பகுதிதான்.',
+   'எத்தனை மைல்கள் பிரித்தாலும், உங்கள் அன்பு குடும்பத்தை இணைத்து அனைவருக்கும் வலிமை தருகிறது.'
   ]
  },
  'wajeethu-ali':{
-  location:'Malaysia',heading:'A thought for Dad',quotes:[
-   'Your hard work in Malaysia carries the love and hopes of your family with it every day.',
-   'Distance changes where you work, but it never changes how close you are to your family.',
-   'Every call, message, and loving word helps your children feel that Dad is always near.',
-   'The effort you make today is building a safer and brighter tomorrow for your family.',
-   'Work with purpose, rest without guilt, and remember that your family is proud of you.',
-   'Even across countries, your care reaches home and gives the family strength.',
-   'A father’s presence is measured in love, not miles; your family carries you in every moment.'
+  location:'மலேசியா',heading:'அப்பாவுக்கான இன்றைய சிந்தனை',quotes:[
+   'மலேசியாவில் நீங்கள் செய்யும் கடின உழைப்பு, குடும்பத்தின் அன்பையும் நம்பிக்கைகளையும் தினமும் சுமந்து செல்கிறது.',
+   'தூரம் நீங்கள் வேலை செய்யும் இடத்தை மட்டுமே மாற்றுகிறது; குடும்பத்துடனான உங்கள் நெருக்கத்தை ஒருபோதும் மாற்றாது.',
+   'ஒவ்வொரு அழைப்பும், செய்தியும், அன்பான வார்த்தையும் அப்பா எப்போதும் அருகில் இருப்பதை குழந்தைகளுக்கு உணர்த்துகிறது.',
+   'இன்று நீங்கள் செய்யும் முயற்சி, குடும்பத்திற்குப் பாதுகாப்பான மற்றும் ஒளிமயமான நாளையை உருவாக்குகிறது.',
+   'நோக்கத்துடன் உழையுங்கள், குற்ற உணர்வின்றி ஓய்வெடுங்கள்; உங்கள் குடும்பம் உங்களைப் பெருமைப்படுகிறது என்பதை நினைவில் கொள்ளுங்கள்.',
+   'நாடுகள் பிரித்திருந்தாலும், உங்கள் அக்கறை வீட்டைச் சென்றடைந்து குடும்பத்திற்கு வலிமை தருகிறது.',
+   'ஒரு தந்தையின் உடனிருப்பு மைல்களால் அல்ல, அன்பால் அளக்கப்படுகிறது; ஒவ்வொரு தருணத்திலும் குடும்பம் உங்களைத் தன்னுடன் சுமக்கிறது.'
   ]
  }
 };
@@ -48,7 +48,7 @@ export const Dashboard:React.FC<Props>=({profile,onNavigateToRegistry})=>{
  return <div className={`grid gap-4 animate-fade-in dashboard-fit ${profile.kind===ProfileKind.CHILD?'dashboard-child':'dashboard-adult'} ${profile.id==='liyan'?'dashboard-liyan':''}`}>
   <section className="bg-white border border-gray-200 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div className="flex items-center gap-3">{profile.photo?<img src={profile.photo} alt={`${profile.name} profile`} className="w-16 h-16 rounded-lg object-cover border border-gray-200"/>:<div className="w-16 h-16 rounded-lg flex items-center justify-center text-white text-2xl font-bold" style={{background:profile.color}}>{profile.name.charAt(0)}</div>}<div><h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2><p className="text-sm text-gray-500 mt-1">{getAge(profile.birthDate)}{profile.birthDate?` • Born ${formatDate(profile.birthDate)}`:''}</p>{profile.allergies&&<p className="mt-1 text-xs font-semibold text-rose-600">Allergies: {profile.allergies}</p>}</div></div><button onClick={onNavigateToRegistry} className="bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Plus size={17}/>Add health entry</button></section>
   {life&&live&&<LifeMoments profile={profile} life={life} live={live}/>}
-  {adultQuote&&<section className="bg-gradient-to-br from-violet-50 to-rose-50 border border-violet-100 rounded-lg p-6"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-violet-700"><Heart size={18}/><h3 className="font-bold">{adultQuote.heading}</h3></div><span className="text-[10px] font-bold uppercase tracking-wide text-violet-500 bg-white/70 border border-violet-100 rounded-full px-3 py-1">{adultQuote.location}</span></div><p className="mt-4 text-xl font-semibold leading-relaxed text-gray-800">“{adultQuote.quote}”</p><p className="mt-4 text-xs text-gray-500">Daily family encouragement for {profile.name} • Changes every day</p></section>}
+  {adultQuote&&<section className="bg-gradient-to-br from-violet-50 to-rose-50 border border-violet-100 rounded-lg p-6"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-violet-700"><Heart size={18}/><h3 className="font-bold">{adultQuote.heading}</h3></div><span className="text-[10px] font-bold uppercase tracking-wide text-violet-500 bg-white/70 border border-violet-100 rounded-full px-3 py-1">{adultQuote.location}</span></div><p className="mt-4 text-xl font-semibold leading-relaxed text-gray-800">“{adultQuote.quote}”</p><p className="mt-4 text-xs text-gray-500">{profile.name} குடும்பத்திற்கான தினசரி ஊக்கச் செய்தி • ஒவ்வொரு நாளும் மாறும்</p></section>}
   {profile.kind===ProfileKind.CHILD&&<section className="bg-white border border-gray-200 rounded-lg overflow-hidden"><div className="px-6 py-4 border-b flex items-center justify-between"><div><h3 className="font-bold">இன்றைய குறிப்பு - {profile.name}</h3><p className="text-xs text-gray-400 mt-1">அன்பான தினசரிச் செய்தியும் வயதிற்கு ஏற்ற பொதுவான வழிகாட்டலும்</p></div><button onClick={()=>loadInsight(true)} disabled={insightLoading} title="புதிய தினசரிக் குறிப்பை உருவாக்கவும்" className="p-2 text-gray-400 hover:text-gray-900 disabled:opacity-40">{insightLoading?<Loader2 size={18} className="animate-spin"/>:<RefreshCw size={18}/>}</button></div>{insight?<div className="grid md:grid-cols-2"><div className="p-6 md:border-r border-gray-200"><div className="flex items-center gap-2 text-rose-600"><Heart size={18}/><h4 className="text-xs font-bold">{profile.name} அம்மாவிடம் சொல்வது</h4></div><p className="mt-4 text-lg font-semibold leading-relaxed text-gray-800">“{insight.babyMessage}”</p></div><div className="p-6 bg-amber-50/50"><div className="flex items-center gap-2 text-amber-700"><Lightbulb size={18}/><h4 className="text-xs font-bold">அம்மாவுக்கான ஆலோசனை</h4></div><p className="mt-4 text-sm leading-relaxed text-gray-700">{insight.momAdvice}</p><p className="text-[10px] text-gray-400 mt-4">பொதுவான வழிகாட்டல் மட்டும் {insight.source==='fallback'?'• இணையமில்லா குறிப்பு':'• AI உருவாக்கியது'}</p></div></div>:<div className="p-8 flex items-center justify-center gap-2 text-sm text-gray-400"><Loader2 size={18} className="animate-spin"/>இன்றைய குறிப்பைத் தயாரிக்கிறது...</div>}</section>}
   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{cards.map(({label,record,icon:Icon,color})=><div key={label} className="bg-white border border-gray-200 rounded-lg p-5"><div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}><Icon size={20}/></div><p className="text-xs font-bold uppercase text-gray-400 mt-4">Latest {label}</p><p className="text-2xl font-bold mt-1">{record?.value!==undefined?`${record.value} ${record.unit||''}`:'Not recorded'}</p>{record&&<p className="text-xs text-gray-400 mt-1">{formatDate(record.date)}</p>}</div>)}</div>
   {profile.id==='liyan'&&<section><h3 className="text-lg font-bold mb-3">Today for Liyan</h3><div className="grid grid-cols-3 gap-3">{[[Utensils,'Feeds',counts.feeds],[Moon,'Sleep logs',counts.sleep],[Baby,'Diapers',counts.diapers]].map(([Icon,label,value]:any)=><div key={label} className="bg-white border rounded-lg p-4 text-center"><Icon className="mx-auto text-sky-600" size={20}/><p className="text-2xl font-bold mt-2">{value}</p><p className="text-xs text-gray-400">{label}</p></div>)}</div></section>}

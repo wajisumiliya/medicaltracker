@@ -52,7 +52,7 @@ async function verifyFirebaseUser(request) {
   }
 }
 
-async function callWorkersAI(ai, prompt) {
+async function callWorkersAI(ai, prompt, schema) {
   if (!ai) {
     const e = new Error('Workers AI binding is not configured');
     e.status = 500;
@@ -63,7 +63,7 @@ async function callWorkersAI(ai, prompt) {
       { role: 'system', content: 'Return only valid JSON. Do not use Markdown code fences.' },
       { role: 'user', content: prompt }
     ],
-    response_format: { type: 'json_object' }
+    response_format: { type: 'json_schema', json_schema: schema }
   });
   return typeof result?.response === 'string' ? result.response : JSON.stringify(result);
 }
@@ -99,7 +99,12 @@ export default {
           'நோயைக் கண்டறியவோ, மருந்தைப் பரிந்துரைக்கவோ, குழந்தைக்கான மருந்தளவைக் கூறவோ கூடாது. ' +
           'Return only valid JSON with keys babyMessage and momAdvice.';
 
-        const output = await callWorkersAI(env.AI, prompt);
+        const output = await callWorkersAI(env.AI, prompt,{
+          type:'object',
+          properties:{babyMessage:{type:'string'},momAdvice:{type:'string'}},
+          required:['babyMessage','momAdvice'],
+          additionalProperties:false
+        });
         const parsed = parseAIJson(output);
 
         return json({
@@ -119,7 +124,17 @@ export default {
           'தவறான பதிலைத் தேர்ந்தெடுத்தவரும் புரிந்துகொள்ளும் வகையில் explanation மூலம் உண்மையை சுருக்கமாக கற்பிக்கவும். ' +
           'Return only valid JSON with keys question, options, correctIndex, and explanation.';
 
-        const output = await callWorkersAI(env.AI, prompt);
+        const output = await callWorkersAI(env.AI, prompt,{
+          type:'object',
+          properties:{
+            question:{type:'string'},
+            options:{type:'array',items:{type:'string'},minItems:4,maxItems:4},
+            correctIndex:{type:'integer',minimum:0,maximum:3},
+            explanation:{type:'string'}
+          },
+          required:['question','options','correctIndex','explanation'],
+          additionalProperties:false
+        });
         const parsed = parseAIJson(output);
         const options = Array.isArray(parsed.options) ? parsed.options.slice(0, 4).map(value => clean(value, 500)) : [];
         const correctIndex = Number(parsed.correctIndex);

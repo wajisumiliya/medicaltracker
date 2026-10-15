@@ -1,4 +1,5 @@
-import { BackupData, DailyFamilyInsight, DailyIslamicQuiz, MedicalRecord, Medicine, Profile, ProfileKind, User } from '../types';
+import { BackupData, CareNote, DailyFamilyInsight, DailyIslamicQuiz, MedicalRecord, Medicine, Profile, ProfileKind, User } from '../types';
+const CK='koala_family_care_extra_v1';
 const RK='koala_records_v2', PK='koala_profiles_v2', MK='koala_medicines_v2', SK='koala_selected_profile_v2', UK='koala_current_session', IK='koala_global_profile_image', MIG='koala_v2_migrated', QK='koala_quota_error_ts', PIN='koala_pin_hash_v2';
 const defaults:Profile[]=[
  {id:'liya',name:'Liya',kind:ProfileKind.CHILD,birthDate:'2023-09-22',sex:'female',color:'#e11d48',allergies:'',notes:''},
@@ -26,9 +27,12 @@ export const StorageService={
  addRecord:async(r:Omit<MedicalRecord,'id'>)=>{const n={...r,id:StorageService.generateId(),timestamp:new Date().toISOString()};write(RK,[n,...read<MedicalRecord[]>(RK,[])]);changed();cloud({entity:'records',action:'set',data:n});return n;},
  updateRecord:async(r:MedicalRecord)=>{write(RK,read<MedicalRecord[]>(RK,[]).map(x=>x.id===r.id?r:x));changed();cloud({entity:'records',action:'set',data:r});},deleteRecord:async(id:string)=>{write(RK,read<MedicalRecord[]>(RK,[]).filter(x=>x.id!==id));changed();cloud({entity:'records',action:'delete',id});},
  getMedicines:async(id?:string)=>read<Medicine[]>(MK,[]).filter(m=>!id||m.profileId===id),saveMedicine:async(m:Medicine)=>{const a=read<Medicine[]>(MK,[]);const i=a.findIndex(x=>x.id===m.id);i>=0?a[i]=m:a.push(m);write(MK,a);changed();cloud({entity:'medicines',action:'set',data:m});},deleteMedicine:async(id:string)=>{write(MK,read<Medicine[]>(MK,[]).filter(x=>x.id!==id));changed();cloud({entity:'medicines',action:'delete',id});},
- exportData:():BackupData=>({version:2,exportedAt:new Date().toISOString(),profiles:read(PK,defaults),records:read(RK,[]),medicines:read(MK,[])}),
- importData:(b:BackupData)=>{if(b.version!==2||!Array.isArray(b.profiles)||!Array.isArray(b.records)||!Array.isArray(b.medicines))throw new Error('This is not a valid Koala Family backup.');write(PK,b.profiles);write(RK,b.records);write(MK,b.medicines);changed();cloud({entity:'profiles',action:'replace',backup:b});},
- applyCloudData:(data:Partial<BackupData>)=>{if(data.profiles)write(PK,data.profiles);if(data.records)write(RK,data.records);if(data.medicines)write(MK,data.medicines);changed();},
+ getCareNotes:(id?:string):CareNote[]=>read<CareNote[]>(CK,[]).filter(x=>!id||x.profileId===id),
+ saveCareNote:(note:CareNote)=>{const notes=read<CareNote[]>(CK,[]);const i=notes.findIndex(x=>x.id===note.id);if(i>=0)notes[i]=note;else notes.unshift(note);write(CK,notes);changed();cloud({entity:'careNotes',action:'set',data:note});},
+ deleteCareNote:(id:string)=>{write(CK,read<CareNote[]>(CK,[]).filter(x=>x.id!==id));changed();cloud({entity:'careNotes',action:'delete',id});},
+ exportData:():BackupData=>({version:2,exportedAt:new Date().toISOString(),profiles:read(PK,defaults),records:read(RK,[]),medicines:read(MK,[]),careNotes:read(CK,[])}),
+ importData:(b:BackupData)=>{if(b.version!==2||!Array.isArray(b.profiles)||!Array.isArray(b.records)||!Array.isArray(b.medicines))throw new Error('This is not a valid Koala Family backup.');write(PK,b.profiles);write(RK,b.records);write(MK,b.medicines);if(b.careNotes)write(CK,b.careNotes);changed();cloud({entity:'profiles',action:'replace',backup:b});},
+ applyCloudData:(data:Partial<BackupData>)=>{if(data.profiles)write(PK,data.profiles);if(data.records)write(RK,data.records);if(data.medicines)write(MK,data.medicines);if(data.careNotes)write(CK,data.careNotes);changed();},
  getDailyInsight:(profileId:string,date:string):DailyFamilyInsight|null=>read<DailyFamilyInsight|null>(insightKey(profileId,date),null),
  saveDailyInsight:(profileId:string,date:string,insight:DailyFamilyInsight)=>write(insightKey(profileId,date),insight),
  clearDailyInsight:(profileId:string,date:string)=>localStorage.removeItem(insightKey(profileId,date)),

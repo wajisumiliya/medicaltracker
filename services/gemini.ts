@@ -71,8 +71,8 @@ export const GeminiService={
  instantIslamicQuiz:():DailyIslamicQuiz=>StorageService.getDailyIslamicQuiz(localDateString())||fallbackQuiz(localDateString()),
  getDailyIslamicQuiz:async(force=false):Promise<DailyIslamicQuiz>=>{
    const today=localDateString();
+   if(!force){const cached=StorageService.getDailyIslamicQuiz(today);if(cached)return cached;}
    const cloudUser=await waitForCloudAuth();
-   if(!force){const cached=StorageService.getDailyIslamicQuiz(today);if(cached&&(cached.source==='ai'||!cloudUser))return cached;}
    if(StorageService.isQuotaExceeded()||!cloudUser){const quiz=fallbackQuiz(today);StorageService.saveDailyIslamicQuiz(today,quiz);return quiz;}
    try{
      const parsed=await callGeminiProxy<{question:string;options:string[];correctIndex:number;explanation:string}>({action:'islamicQuiz',date:today});
@@ -83,11 +83,11 @@ export const GeminiService={
  },
  getDailyFamilyInsight:async(profile:Profile,force=false):Promise<DailyFamilyInsight>=>{
    const today=localDateString();
-   const cloudUser=await waitForCloudAuth();
    if(!force){
      const cached=StorageService.getDailyInsight(profile.id,today);
-     if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice)&&(cached.source==='ai'||!CloudService.currentUser()))return cached;
+     if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice))return cached;
    }
+   await waitForCloudAuth();
    if(StorageService.isQuotaExceeded()||!CloudService.currentUser()){
      const fallback=dailyFallbackInsight(profile,today);
      StorageService.saveDailyInsight(profile.id,today,fallback);

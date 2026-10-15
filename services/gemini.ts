@@ -56,8 +56,8 @@ const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
       'Authorization':'Bearer '+idToken
     },
     body:JSON.stringify(payload),
-    signal:AbortSignal.timeout(12000)
-  }); } catch { throw new Error('AI_WORKER_UNREACHABLE: Check the deployed Worker URL and Cloudflare route.'); }
+    signal:AbortSignal.timeout(30000)
+  }); } catch(error:any) { if(error?.name==='TimeoutError'||error?.name==='AbortError')throw new Error('AI_TIMEOUT'); throw new Error('AI_WORKER_UNREACHABLE: Check the deployed Worker URL and Cloudflare route.'); }
   const contentType=response.headers.get('content-type')||'';
   if(!contentType.includes('application/json'))throw new Error('AI_WORKER_WRONG_ROUTE: Endpoint returned a web page instead of AI JSON.');
   if(response.status===401||response.status===403)throw new Error('CLOUD_AUTH_REQUIRED');
@@ -106,8 +106,10 @@ export const GeminiService={
    }catch(error:any){
      if(String(error?.message).includes('429'))StorageService.setQuotaExceeded(60);
      const fallback=dailyFallbackInsight(profile,today);
+     const cached=StorageService.getDailyInsight(profile.id,today);
+     if(cached?.source==='ai')return cached;
      StorageService.saveDailyInsight(profile.id,today,fallback);
-     return {...fallback,source:'fallback',aiError:String(error?.message||'AI request failed') } as DailyFamilyInsight;
+     return fallback;
    }
  },
  ask:async(question:string,profile:Profile,records:MedicalRecord[]):Promise<string>=>{

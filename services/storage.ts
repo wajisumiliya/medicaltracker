@@ -9,8 +9,8 @@ const read=<T,>(key:string,fallback:T):T=>{try{const value=localStorage.getItem(
 const write=(key:string,value:unknown)=>localStorage.setItem(key,JSON.stringify(value));
 const changed=()=>window.dispatchEvent(new CustomEvent('koalaDataChanged'));
 const cloud=(detail:unknown)=>window.dispatchEvent(new CustomEvent('koalaCloudMutation',{detail}));
-const insightKey=(profileId:string,date:string)=>`koala_daily_insight_tamil_v4_${profileId}_${date}`;
-const quizKey=(date:string)=>`koala_daily_islamic_quiz_tamil_v1_${date}`;
+const insightKey=(profileId:string,date:string)=>`koala_daily_insight_tamil_v5_${profileId}_${date}`;
+const quizKey=(date:string)=>`koala_daily_islamic_quiz_tamil_v2_${date}`;
 export const StorageService={
  initialize:()=>{if(!localStorage.getItem(PK))write(PK,defaults);else{const profiles=read<Profile[]>(PK,[]);const mom=profiles.find(profile=>profile.id==='sumaiya');if(mom){mom.birthDate='1998-06-09';mom.sex='female';}if(!profiles.some(profile=>profile.id==='wajeethu-ali'))profiles.push(defaults.find(profile=>profile.id==='wajeethu-ali')!);write(PK,profiles);}if(!localStorage.getItem(SK))localStorage.setItem(SK,'liyan');if(!localStorage.getItem(MIG)){const old=read<any[]>('koala_records_v1',[]);if(old.length&&!read<any[]>(RK,[]).length)write(RK,old.map(r=>({...r,profileId:'sumaiya',value:r.value===''||r.value===undefined?undefined:Number(r.value)})));const meds=read<any[]>('koala_medicine_config_v1',[]);if(meds.length&&!read<any[]>(MK,[]).length)write(MK,meds.map(m=>({id:m.id,profileId:'sumaiya',name:m.name,dosage:'',reason:'Migrated from pregnancy tracker',prescribingDoctor:'',startDate:'',reminderTimes:[]})));localStorage.setItem(MIG,new Date().toISOString());}},
  getUserData:():User|null=>{const u=read<User|null>(UK,null);if(u)u.profileImage=localStorage.getItem(IK)||undefined;return u;},getGlobalProfileImage:()=>localStorage.getItem(IK),

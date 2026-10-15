@@ -2,6 +2,9 @@ import { DailyFamilyInsight, DailyIslamicQuiz, MedicalRecord, Profile } from '..
 import { getAge, localDateString } from './date';
 import { StorageService } from './storage';
 import { CloudService } from './cloud';
+import { getAuth } from 'firebase/auth';
+
+const waitForCloudAuth=async()=>{await getAuth().authStateReady();return CloudService.currentUser();};
 
 const GEMINI_PROXY_URL =
   import.meta.env.VITE_GEMINI_PROXY_URL ||
@@ -62,8 +65,9 @@ const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
 export const GeminiService={
  getDailyIslamicQuiz:async(force=false):Promise<DailyIslamicQuiz>=>{
    const today=localDateString();
-   if(!force){const cached=StorageService.getDailyIslamicQuiz(today);if(cached&&(cached.source==='ai'||!CloudService.currentUser()))return cached;}
-   if(StorageService.isQuotaExceeded()||!CloudService.currentUser()){const quiz=fallbackQuiz(today);StorageService.saveDailyIslamicQuiz(today,quiz);return quiz;}
+   const cloudUser=await waitForCloudAuth();
+   if(!force){const cached=StorageService.getDailyIslamicQuiz(today);if(cached&&(cached.source==='ai'||!cloudUser))return cached;}
+   if(StorageService.isQuotaExceeded()||!cloudUser){const quiz=fallbackQuiz(today);StorageService.saveDailyIslamicQuiz(today,quiz);return quiz;}
    try{
      const parsed=await callGeminiProxy<{question:string;options:string[];correctIndex:number;explanation:string}>({action:'islamicQuiz',date:today});
      if(!containsTamil(parsed.question)||!containsTamil(parsed.explanation)||!Array.isArray(parsed.options)||parsed.options.length!==4||parsed.options.some(option=>!containsTamil(option))||!Number.isInteger(parsed.correctIndex)||parsed.correctIndex<0||parsed.correctIndex>3)throw new Error('Invalid quiz response');
@@ -73,6 +77,7 @@ export const GeminiService={
  },
  getDailyFamilyInsight:async(profile:Profile,force=false):Promise<DailyFamilyInsight>=>{
    const today=localDateString();
+   const cloudUser=await waitForCloudAuth();
    if(!force){
      const cached=StorageService.getDailyInsight(profile.id,today);
      if(cached&&containsTamil(cached.babyMessage)&&containsTamil(cached.momAdvice)&&(cached.source==='ai'||!CloudService.currentUser()))return cached;

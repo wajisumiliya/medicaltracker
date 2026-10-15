@@ -39,7 +39,7 @@ const fallbackQuizzes:Omit<DailyIslamicQuiz,'generatedAt'|'source'>[]=[
  {question:'முஸ்லிம்கள் தொழுகையில் எந்தத் திசையை நோக்குகிறார்கள்?',options:['மதீனா','ஜெருசலேம்','கஅபா','அரஃபா'],correctIndex:2,explanation:'மக்காவில் உள்ள புனித கஅபாவை நோக்கிய கிப்லா திசையில் முஸ்லிம்கள் தொழுகிறார்கள்.'},
  {question:'ஹஜ் கடமை நிறைவேற்றப்படும் புனித நகரம் எது?',options:['மக்கா','மதீனா','கெய்ரோ','தமாஸ்கஸ்'],correctIndex:0,explanation:'உடல் மற்றும் பொருளாதார வசதி உள்ள முஸ்லிம்கள் வாழ்நாளில் ஒருமுறை மக்காவில் ஹஜ் கடமையை நிறைவேற்ற வேண்டும்.'}
 ];
-const fallbackQuiz=(date:string):DailyIslamicQuiz=>{const day=Math.floor(new Date(`${date}T00:00:00`).getTime()/86400000);return {...fallbackQuizzes[Math.abs(day)%fallbackQuizzes.length],generatedAt:new Date().toISOString(),source:'fallback'};};
+const fallbackQuiz=(date:string):DailyIslamicQuiz=>{const day=Math.floor(Date.parse(`${date}T12:00:00Z`)/86400000);return {...fallbackQuizzes[Math.abs(day)%fallbackQuizzes.length],generatedAt:new Date().toISOString(),source:'fallback'};};
 
 const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
   const user=CloudService.currentUser();

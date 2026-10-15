@@ -48,14 +48,17 @@ const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
   const user=CloudService.currentUser();
   if(!user)throw new Error('CLOUD_SIGN_IN_REQUIRED');
   const idToken=await user.getIdToken();
-  const response=await fetch(GEMINI_PROXY_URL,{
+  let response:Response;
+  try { response=await fetch(GEMINI_PROXY_URL,{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
       'Authorization':'Bearer '+idToken
     },
     body:JSON.stringify(payload)
-  });
+  }); } catch { throw new Error('AI_WORKER_UNREACHABLE: Check the deployed Worker URL and Cloudflare route.'); }
+  const contentType=response.headers.get('content-type')||'';
+  if(!contentType.includes('application/json'))throw new Error('AI_WORKER_WRONG_ROUTE: Endpoint returned a web page instead of AI JSON.');
   if(response.status===401||response.status===403)throw new Error('CLOUD_AUTH_REQUIRED');
   if(response.status===429)throw new Error('429');
   if(!response.ok){let detail='';try{const body=await response.json() as {error?:string};detail=body.error||'';}catch{}throw new Error('GEMINI_PROXY_'+response.status+(detail?': '+detail:''));}

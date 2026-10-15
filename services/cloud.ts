@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, User } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs, initializeFirestore, onSnapshot, setDoc, writeBatch } from 'firebase/firestore';
 import { BackupData, MedicalRecord, Medicine, Profile } from '../types';
 
@@ -11,7 +11,9 @@ const app=initializeApp({
   authDomain:'medicaltracker-family-2026.firebaseapp.com',
   messagingSenderId:'424481587400'
 });
-const auth=getAuth(app);const db=initializeFirestore(app,{ignoreUndefinedProperties:true});const root='families/koala-family';
+const auth=getAuth(app);
+// Complete any Google redirect sign-in when the app loads.
+getRedirectResult(auth).catch(error => console.error('Firebase redirect sign-in failed:', error?.code || error));const db=initializeFirestore(app,{ignoreUndefinedProperties:true});const root='families/koala-family';
 const refs={profiles:collection(db,`${root}/profiles`),records:collection(db,`${root}/records`),medicines:collection(db,`${root}/medicines`)};
 type Entity=keyof typeof refs;
 type CloudStatus='offline'|'connecting'|'synced'|'error';
@@ -23,7 +25,7 @@ const replaceAll=async(backup:BackupData)=>{const batch=writeBatch(db);for(const
 
 export const CloudService={
   currentUser:()=>auth.currentUser,
-  signIn:async()=>{const result=await signInWithPopup(auth,new GoogleAuthProvider());if(!authorized(result.user)){await signOut(auth);throw new Error('This Google account is not authorized for the family database.');}return result.user;},
+  signIn:async()=>{const provider=new GoogleAuthProvider();const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);if(mobile){await signInWithRedirect(auth,provider);return null;}const result=await signInWithPopup(auth,provider);if(!authorized(result.user)){await signOut(auth);throw new Error('This Google account is not authorized for the family database.');}return result.user;},
   signOut:()=>signOut(auth),
   start:(local:BackupData,onUpdate:(data:Partial<BackupData>)=>void,onStatus:(status:CloudStatus,user:User|null)=>void)=>{
     let unsubscribers:(()=>void)[]=[];let mutationHandler:((event:Event)=>void)|null=null;

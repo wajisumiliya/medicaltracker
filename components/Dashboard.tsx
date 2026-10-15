@@ -39,7 +39,7 @@ export const Dashboard:React.FC<Props>=({profile,onNavigateToRegistry})=>{
  const loadInsight=useCallback(async(force=false)=>{if(profile.kind!==ProfileKind.CHILD)return;setInsightLoading(true);setInsight(await GeminiService.getDailyFamilyInsight(profile,force));setInsightLoading(false);},[profile,today]);
  useEffect(()=>{load();window.addEventListener('koalaDataChanged',load);return()=>window.removeEventListener('koalaDataChanged',load);},[load]);
  useEffect(()=>{setInsight(null);loadInsight();},[loadInsight]);
- useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),1000);return()=>window.clearInterval(timer);},[]);
+ useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),1000);const refresh=()=>setNow(new Date());document.addEventListener('visibilitychange',refresh);window.addEventListener('focus',refresh);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('focus',refresh);};},[]);
  const latest=(type:RecordType)=>records.find(r=>r.type===type);
  const upcoming=records.filter(r=>(r.type===RecordType.APPOINTMENT||r.type===RecordType.VACCINATION)&&r.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,2);
  const recent=records.slice(0,3);const counts=useMemo(()=>({feeds:records.filter(r=>r.date===today&&r.type===RecordType.FEEDING).length,sleep:records.filter(r=>r.date===today&&r.type===RecordType.SLEEP).length,diapers:records.filter(r=>r.date===today&&r.type===RecordType.DIAPER).length}),[records,today]);

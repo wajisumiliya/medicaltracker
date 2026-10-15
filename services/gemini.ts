@@ -22,8 +22,14 @@ const dailyMessages = [
 ];
 
 const dailyFallbackInsight=(profile:Profile,date:string):DailyFamilyInsight=>{
-  const seed=`${profile.id}-${date}`.split('').reduce((total,char)=>total+char.charCodeAt(0),0);
-  return {...fallbackInsight(profile),babyMessage:dailyMessages[seed%dailyMessages.length]};
+  const dayNumber=Math.floor(Date.parse(`${date}T12:00:00Z`)/86400000);
+  const profileSeed=profile.id.split('').reduce((total,char)=>total+char.charCodeAt(0),0);
+  const seed=dayNumber+profileSeed;
+  const base=fallbackInsight(profile);
+  const adviceVariants=profile.id==='liyan'?
+    [base.momAdvice,'குழந்தையின் தூக்கம், உணவு மற்றும் ஈரமான டயப்பர் எண்ணிக்கையை இன்று கவனியுங்கள். ஏதேனும் மாற்றம் குறித்து கவலை இருந்தால் மருத்துவரிடம் ஆலோசிக்கவும்.','குழந்தையுடன் பேசுவதும் மென்மையாக விளையாடுவதும் பிணைப்பை வளர்க்க உதவும். உடல்நலக் கவலைகளுக்கு மருத்துவரின் ஆலோசனையைப் பெறுங்கள்.']:
+    [base.momAdvice,'குழந்தையுடன் விளையாடவும் பேசவும் தினமும் நேரம் ஒதுக்குங்கள். உணவு, தூக்கம் அல்லது வளர்ச்சி பற்றிய கவலை இருந்தால் மருத்துவரிடம் ஆலோசிக்கவும்.','வயதிற்கு ஏற்ற விளையாட்டு, நல்ல தூக்கம் மற்றும் பல் பராமரிப்பை ஊக்குவியுங்கள். உடல்நலக் கவலைகளுக்கு மருத்துவரை அணுகுங்கள்.'];
+  return {...base,babyMessage:dailyMessages[((seed%dailyMessages.length)+dailyMessages.length)%dailyMessages.length],momAdvice:adviceVariants[((seed%adviceVariants.length)+adviceVariants.length)%adviceVariants.length]};
 };
 
 const fallbackQuizzes:Omit<DailyIslamicQuiz,'generatedAt'|'source'>[]=[
@@ -79,6 +85,7 @@ export const GeminiService={
    try{
      const parsed=await callGeminiProxy<{babyMessage:string;momAdvice:string}>({
        action:'daily',
+       date:today,
        profile:{name:profile.name,age:getAge(profile.birthDate)}
      });
      if(!containsTamil(parsed.babyMessage)||!containsTamil(parsed.momAdvice))throw new Error('Gemini did not return Tamil');

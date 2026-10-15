@@ -82,6 +82,8 @@ function parseAIJson(output) {
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return json({ ok: true });
+    // Public, non-sensitive health check for checking routing without Firebase sign-in.
+    if (request.method === 'GET') return json({ service: 'medicaltracker-ai', status: 'ok' });
     if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
     try {
       await verifyFirebaseUser(request);

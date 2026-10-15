@@ -9,10 +9,10 @@ export const DailyIslamicQuiz:React.FC=()=>{
  const [today,setToday]=useState(()=>localDateString());
  useEffect(()=>{const checkDate=()=>setToday(localDateString());const timer=window.setInterval(checkDate,30000);window.addEventListener('focus',checkDate);document.addEventListener('visibilitychange',checkDate);return()=>{window.clearInterval(timer);window.removeEventListener('focus',checkDate);document.removeEventListener('visibilitychange',checkDate);};},[]);
  const answerKey=`koala_islamic_quiz_answer_${today}`;
- const [quiz,setQuiz]=useState<Quiz|null>(null);
+ const [quiz,setQuiz]=useState<Quiz|null>(()=>GeminiService.instantIslamicQuiz());
  const [selected,setSelected]=useState<number|null>(()=>{const saved=localStorage.getItem(answerKey);return saved===null?null:Number(saved);});
- useEffect(()=>{const saved=localStorage.getItem(answerKey);setSelected(saved===null?null:Number(saved));setQuiz(null);setLoading(true);},[answerKey]);
- const [loading,setLoading]=useState(true);
+ useEffect(()=>{const saved=localStorage.getItem(answerKey);setSelected(saved===null?null:Number(saved));setQuiz(GeminiService.instantIslamicQuiz());setLoading(false);},[answerKey]);
+ const [loading,setLoading]=useState(false);
  const [notificationsEnabled,setNotificationsEnabled]=useState(()=>('Notification'in window)&&Notification.permission==='granted');
  useEffect(()=>{let active=true;GeminiService.getDailyIslamicQuiz().then(value=>{if(!active)return;setQuiz(value);setLoading(false);NotificationService.notifyQuizReady(today);});return()=>{active=false;};},[today]);
  const choose=(index:number)=>{if(selected!==null)return;localStorage.setItem(answerKey,String(index));setSelected(index);};

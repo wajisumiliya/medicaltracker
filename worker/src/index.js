@@ -64,7 +64,7 @@ async function callWorkersAI(ai, prompt, schema) {
       { role: 'system', content: 'Return only valid JSON. Do not use Markdown code fences.' },
       { role: 'user', content: prompt }
     ],
-    response_format: { type: 'json_schema', json_schema: schema }
+    max_tokens: 1024
   }); } catch (cause) {
     console.error('Workers AI invocation failed', cause);
     const e = new Error('Workers AI invocation failed');

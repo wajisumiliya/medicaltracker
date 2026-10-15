@@ -54,3 +54,5 @@ Cloudflare Pages serves the frontend only. **Do not move or delete Firebase Fire
 ### AI Worker note
 
 The active Worker in `worker/src/index.js` uses the Cloudflare Workers AI binding `AI` configured in `worker/wrangler.toml`, not a Gemini API key. Deploy with `cd worker && npm install && npm run deploy` after connecting the Cloudflare account; verify access permissions and Worker endpoint before switching frontend traffic.
+
+<!-- Cloudflare Pages: trigger Git-connected production deployment from main. -->

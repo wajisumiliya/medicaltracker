@@ -5,7 +5,8 @@ export enum EventStatus { PENDING='Pending', COMPLETED='Completed', MISSED='Miss
 export interface Medicine { id:string; profileId:string; name:string; dosage:string; reason:string; prescribingDoctor:string; startDate:string; endDate?:string; reminderTimes:string[]; }
 export interface MedicalRecord { id:string; profileId:string; date:string; time?:string; timestamp?:string; type:RecordType; title:string; details:string; value?:number; unit?:string; location?:string; status?:EventStatus; medicineId?:string; doseNumber?:string; nextDueDate?:string; }
 export interface User { name:string; role:'admin'|'user'; isAuthenticated:boolean; lastLogin?:string; profileImage?:string; }
-export interface BackupData { version:2; exportedAt:string; profiles:Profile[]; records:MedicalRecord[]; medicines:Medicine[]; }
+export interface CareNote { id:string;profileId:string;category:string;date:string;title:string;details:string;amount?:number; }
+export interface BackupData { version:2; exportedAt:string; profiles:Profile[]; records:MedicalRecord[]; medicines:Medicine[]; careNotes?:CareNote[]; }
 export interface GroundingSource { title:string; uri:string; }
 export interface DailyFamilyInsight { babyMessage:string; momAdvice:string; generatedAt:string; source:'ai'|'fallback'; }
 export interface DailyIslamicQuiz { question:string; options:string[]; correctIndex:number; explanation:string; generatedAt:string; source:'ai'|'fallback'; }

@@ -6,31 +6,113 @@ import { GeminiService } from '../services/gemini';
 import { formatDate,getAge,getLifeStats,LifeStats,localDateString } from '../services/date';
 interface Props{profile:Profile;onNavigateToRegistry:()=>void;}
 interface TimeParts{days:number;hours:number;minutes:number;seconds:number;}
-const adultDailyQuotes:Record<string,{location:string;heading:string;quotes:string[]}>= {
- 'sumaiya':{
-  location:'இந்தியா',heading:'அம்மாவுக்கான இன்றைய சிந்தனை',quotes:[
-   'எவ்வளவு தூரம் இருந்தாலும், உங்கள் அன்பே குடும்பத்தை ஒன்றாக இணைக்கும் அமைதியான வலிமை.',
-   'சிறிய தருணங்களில் நீங்கள் காட்டும் அக்கறையே குழந்தைகள் என்றும் நினைவில் வைத்திருக்கும் அரவணைப்பாக மாறுகிறது.',
-   'இன்றே எல்லாவற்றையும் முடிக்க வேண்டியதில்லை; உங்கள் பொறுமையும் உடனிருப்பும் போதுமானவை.',
-   'வீட்டில் நீங்கள் உருவாக்கும் ஒவ்வொரு அமைதியான தருணமும் முழுக் குடும்பத்திற்குமான பரிசு.',
-   'உங்கள் தைரியம், கனிவு மற்றும் நிலையான அன்பு சாதாரண நாட்களையும் பாதுகாப்பான சிறப்பு நாட்களாக மாற்றுகின்றன.',
-   'இன்று உங்களுக்காகவும் சிறிது நேரம் எடுத்துக்கொள்ளுங்கள்; உங்களை கவனிப்பதும் குடும்பத்தை கவனிப்பதின் ஒரு பகுதிதான்.',
-   'எத்தனை மைல்கள் பிரித்தாலும், உங்கள் அன்பு குடும்பத்தை இணைத்து அனைவருக்கும் வலிமை தருகிறது.'
-  ]
- },
- 'wajeethu-ali':{
-  location:'மலேசியா',heading:'அப்பாவுக்கான இன்றைய சிந்தனை',quotes:[
-   'மலேசியாவில் நீங்கள் செய்யும் கடின உழைப்பு, குடும்பத்தின் அன்பையும் நம்பிக்கைகளையும் தினமும் சுமந்து செல்கிறது.',
-   'தூரம் நீங்கள் வேலை செய்யும் இடத்தை மட்டுமே மாற்றுகிறது; குடும்பத்துடனான உங்கள் நெருக்கத்தை ஒருபோதும் மாற்றாது.',
-   'ஒவ்வொரு அழைப்பும், செய்தியும், அன்பான வார்த்தையும் அப்பா எப்போதும் அருகில் இருப்பதை குழந்தைகளுக்கு உணர்த்துகிறது.',
-   'இன்று நீங்கள் செய்யும் முயற்சி, குடும்பத்திற்குப் பாதுகாப்பான மற்றும் ஒளிமயமான நாளையை உருவாக்குகிறது.',
-   'நோக்கத்துடன் உழையுங்கள், குற்ற உணர்வின்றி ஓய்வெடுங்கள்; உங்கள் குடும்பம் உங்களைப் பெருமைப்படுகிறது என்பதை நினைவில் கொள்ளுங்கள்.',
-   'நாடுகள் பிரித்திருந்தாலும், உங்கள் அக்கறை வீட்டைச் சென்றடைந்து குடும்பத்திற்கு வலிமை தருகிறது.',
-   'ஒரு தந்தையின் உடனிருப்பு மைல்களால் அல்ல, அன்பால் அளக்கப்படுகிறது; ஒவ்வொரு தருணத்திலும் குடும்பம் உங்களைத் தன்னுடன் சுமக்கிறது.'
-  ]
- }
+// 20 x 19 combinations = 380 distinct messages per parent, covering all 365 days.
+const adultDailyQuotes:Record<string,{location:string;heading:string;first:string[];second:string[]}>= {
+  "sumaiya": {
+    "location": "இந்தியா",
+    "heading": "அம்மாவுக்கான இன்றைய சிந்தனை",
+    "first": [
+      "இன்னைக்கு கொஞ்ச நேரம் உங்களுக்காகவும் ஒதுக்கிக்கோங்க.",
+      "நீங்க செய்யுற சின்னச் சின்ன விஷயங்களும் குடும்பத்துக்கு ரொம்ப முக்கியம்.",
+      "குழந்தைகளோட சிரிச்சுப் பேசுற நேரம் எப்பவும் அழகானது.",
+      "எல்லா வேலையையும் ஒரே நாளில் முடிக்கணும்னு நினைக்காதீங்க.",
+      "இன்னைக்கு மனசுக்கு பிடிச்ச ஒரு விஷயத்தைச் செய்யுங்க.",
+      "சோர்வா இருந்தா கொஞ்சம் ஓய்வு எடுத்துக்கோங்க.",
+      "உங்க அன்பை குழந்தைகள் தினமும் உணருறாங்க.",
+      "வீட்டில் சின்னச் சின்ன சந்தோஷங்களைக் கவனிங்க.",
+      "உங்களோட முயற்சியை நீங்களே பாராட்டிக்கோங்க.",
+      "குழந்தைகள் பேசும்போது நிதானமா கேட்டுப் பாருங்க.",
+      "இன்னைக்கு ஒரு நல்ல நினைவை உருவாக்குங்க.",
+      "சின்ன முன்னேற்றத்தைக்கூட சந்தோஷமா கொண்டாடுங்க.",
+      "உங்களுக்கும் ஆசைகளும் கனவுகளும் இருக்கு; அதை மறக்காதீங்க.",
+      "குடும்பத்தோட சேர்ந்து சிரிக்க ஒரு காரணம் தேடுங்க.",
+      "எதுவும் சரியா நடக்காத நாளிலும் உங்களை நீங்களே குறை சொல்லாதீங்க.",
+      "இன்னைக்கு கொஞ்ச நேரம் அமைதியா உட்காருங்க.",
+      "உங்க உடம்பையும் மனசையும் கவனிச்சுக்கோங்க.",
+      "ஒரு அன்பான வார்த்தை நாளையே அழகாக்கிடும்.",
+      "குழந்தைகளோட விளையாட கொஞ்ச நேரம் ஒதுக்குங்க.",
+      "உங்களுக்கு உதவி தேவைப்பட்டா தயங்காம கேளுங்க."
+    ],
+    "second": [
+      "ஒரு சின்ன ஓய்வுகூட மனசுக்கு நல்ல மாற்றம் தரும்.",
+      "உங்க அன்புதான் வீட்டுக்கு ஒரு தனி அழகு.",
+      "நீங்க சந்தோஷமா இருக்கிறதும் முக்கியம்தான்.",
+      "ஒவ்வொரு நாளும் புதுசா ஆரம்பிக்கலாம்.",
+      "சின்னச் சின்ன தருணங்கள்தான் நல்ல நினைவுகளா மாறும்.",
+      "அவசரப்படாம உங்க வேகத்திலேயே போங்க.",
+      "குழந்தைகளுக்கு உங்க நேரமும் கவனமும் ரொம்பப் பிடிக்கும்.",
+      "இன்னைக்கு நடந்த ஒரு நல்ல விஷயத்தை நினைச்சுப் பாருங்க.",
+      "உங்களைப் பார்த்துக்கிறதும் அன்பின் ஒரு பகுதிதான்.",
+      "கொஞ்சம் சிரிச்சுப் பேசினாலே மனசு லேசாகும்.",
+      "உங்க முயற்சி வீணாகப் போகாது.",
+      "எல்லாமே சரியா இருக்கணும்னு அவசியமில்லை.",
+      "சின்ன உதவியைக்கூட ஏத்துக்கிறது நல்லதுதான்.",
+      "நிதானமா இருந்தா பல விஷயங்கள் சுலபமாகும்.",
+      "உங்க குடும்பத்துக்கு நீங்க ரொம்ப முக்கியமானவர்.",
+      "ஒரு இனிய வார்த்தை பெரிய சந்தோஷம் தரலாம்.",
+      "இன்னைக்கு உங்களுக்குப் பிடிச்ச ஒரு பாட்டைக் கேளுங்க.",
+      "குடும்பத்தோட செலவிடுற நேரம் எப்பவும் மதிப்பானது.",
+      "நாளைக்கு இன்னொரு நல்ல வாய்ப்பு இருக்கு."
+    ]
+  },
+  "wajeethu-ali": {
+    "location": "மலேசியா",
+    "heading": "அப்பாவுக்கான இன்றைய சிந்தனை",
+    "first": [
+      "இன்னைக்கு குடும்பத்தோட கொஞ்ச நேரம் மனசுவிட்டுப் பேசுங்க.",
+      "வேலை எவ்வளவு இருந்தாலும் உங்க உடம்பைக் கவனிச்சுக்கோங்க.",
+      "குழந்தைகளோட ஒரு சின்ன அழைப்புகூட பெரிய சந்தோஷம் தரும்.",
+      "இன்னைக்கு உங்களுக்காகவும் கொஞ்ச நேரம் ஒதுக்குங்க.",
+      "நீங்க எடுக்குற ஒவ்வொரு முயற்சியும் முக்கியமானது.",
+      "குடும்பத்துக்கு உங்க அன்பைச் சொல்லத் தயங்காதீங்க.",
+      "சோர்வா இருந்தா கொஞ்சம் ஓய்வெடுத்துக்கோங்க.",
+      "இன்னைக்கு நடந்த ஒரு நல்ல விஷயத்தை நினைச்சுப் பாருங்க.",
+      "குழந்தைகள் சொல்லுற சின்ன விஷயங்களையும் ஆர்வமா கேளுங்க.",
+      "வேலை முடிஞ்சதும் மனசுக்கு ஓய்வு கொடுங்க.",
+      "உங்க கனவுகளுக்காக நிதானமா முன்னேறுங்க.",
+      "இன்னைக்கு குடும்பத்துக்கு ஒரு அன்பான செய்தி அனுப்புங்க.",
+      "சின்ன வெற்றியைக்கூட சந்தோஷமா கொண்டாடுங்க.",
+      "உங்களுக்கு பிடிச்ச விஷயத்துக்கும் நேரம் ஒதுக்குங்க.",
+      "குடும்பத்தோட பழைய நல்ல நினைவுகளை நினைச்சுப் பாருங்க.",
+      "எல்லா பொறுப்பையும் தனியா சுமக்க வேண்டியதில்லை.",
+      "உங்க முயற்சியை நீங்களே பாராட்டிக்கோங்க.",
+      "குழந்தைகளுக்கு ஒரு குட்டிக் கதை சொல்லுங்க.",
+      "இன்னைக்கு அவசரப்படாம ஒரு விஷயத்தைச் செய்து பாருங்க.",
+      "தூரத்தில் இருந்தாலும் அன்பை வெளிப்படுத்த நிறைய வழிகள் இருக்கு."
+    ],
+    "second": [
+      "உங்க குரலைக் கேட்பதே குழந்தைகளுக்கு சந்தோஷம்.",
+      "சின்னச் சின்ன உரையாடல்கள்தான் உறவை இன்னும் நெருக்கமாக்கும்.",
+      "உங்க நலனும் குடும்பத்துக்கு ரொம்ப முக்கியம்.",
+      "ஒவ்வொரு நாளும் புதுசா தொடங்கலாம்.",
+      "அன்பைச் சொல்ல பெரிய வார்த்தைகள் தேவையில்லை.",
+      "கொஞ்சம் ஓய்வு எடுத்தா நாளை புத்துணர்ச்சியா இருக்கும்.",
+      "உங்க நேரம்தான் குடும்பத்துக்கு ஒரு அழகான பரிசு.",
+      "சின்ன முயற்சிகளும் நாளடைவில் நல்ல பலன் தரும்.",
+      "உங்க அக்கறை எப்பவும் குடும்பத்துக்கு தெரியும்.",
+      "இன்னைக்கு ஒரு நல்ல நினைவை உருவாக்கலாம்.",
+      "நிதானமா முன்னேறினாலும் அது முன்னேற்றம்தான்.",
+      "உங்களை நீங்களே அதிகமா வருத்திக்காதீங்க.",
+      "ஒரு சிரிப்பும் ஒரு அன்பான வார்த்தையும் போதும்.",
+      "குடும்பத்தோட பேசுற நேரத்தை ரசிங்க.",
+      "உங்க உழைப்போட சேர்த்து ஓய்வுக்கும் இடம் கொடுங்க.",
+      "சின்ன சந்தோஷங்களையும் தவறவிடாதீங்க.",
+      "குழந்தைகளுக்கு நீங்க சொல்ற கதைகள் பிடிக்கும்.",
+      "நாளைக்கு இன்னொரு நல்ல வாய்ப்பு காத்திருக்கு.",
+      "உங்களோட அன்பு எப்பவும் மதிப்பானது."
+    ]
+  }
 };
-const getAdultDailyQuote=(profileId:string,date:string)=>{const set=adultDailyQuotes[profileId];if(!set)return null;const [year,month,day]=date.split('-').map(Number);const dayNumber=Math.floor(Date.UTC(year,month-1,day)/86400000);return {...set,quote:set.quotes[dayNumber%set.quotes.length]};};
+const getAdultDailyQuote=(profileId:string,date:string)=>{
+ const set=adultDailyQuotes[profileId];if(!set)return null;
+ const [year,month,day]=date.split('-').map(Number);
+ const dayOfYear=Math.floor((Date.UTC(year,month-1,day)-Date.UTC(year,0,1))/86400000);
+ // Coprime step keeps each pair unique across the entire year.
+ const index=dayOfYear;
+ const first=set.first[index%set.first.length];
+ const second=set.second[Math.floor(index/set.first.length)%set.second.length];
+ return {...set,quote:`${first} ${second}`};
+};
 const TimeGrid:React.FC<{parts:TimeParts;dark?:boolean}>=({parts,dark=false})=><div className="grid grid-cols-4 gap-0.5 sm:gap-1 mt-2 w-full min-w-0">{[['DAYS',parts.days.toLocaleString()],['HRS',String(parts.hours).padStart(2,'0')],['MIN',String(parts.minutes).padStart(2,'0')],['SEC',String(parts.seconds).padStart(2,'0')]].map(([label,value])=><div key={label} className={`min-w-0 rounded-lg px-0.5 py-1 text-center ${dark?'bg-white/15':'bg-emerald-50'}`}><p className="text-[clamp(10px,2.8vw,15px)] font-bold tabular-nums truncate leading-tight">{value}</p><p className={`text-[8px] font-semibold mt-0.5 ${dark?'text-emerald-100':'text-slate-500'}`}>{label}</p></div>)}</div>;
 const LifeMoments:React.FC<{profile:Profile;life:LifeStats;live:{birthday:TimeParts;elapsed:TimeParts}}>=({profile,life,live})=><section className="min-w-0"><h3 className="text-base font-bold text-gray-900 mb-2">Life moments</h3><div className="grid grid-cols-2 gap-2"><article className="min-w-0 bg-white border border-emerald-100 rounded-2xl p-3 shadow-sm"><div className="flex gap-1 items-center text-xs font-semibold text-slate-600"><PartyPopper size={15} className="text-rose-500 shrink-0"/>Next birthday</div>{life.daysToBirthday===0?<p className="font-bold text-emerald-700 mt-2">Birthday today!</p>:<TimeGrid parts={live.birthday}/>}<p className="text-[10px] text-slate-500 mt-2 truncate">{formatDate(life.nextBirthday)}</p></article><article className="min-w-0 bg-white border border-emerald-100 rounded-2xl p-3 shadow-sm"><div className="flex gap-1 items-center text-xs font-semibold text-slate-600"><TimerReset size={15} className="text-sky-600 shrink-0"/>Time since birth</div><TimeGrid parts={live.elapsed}/><p className="text-[10px] text-slate-500 mt-2">Live lifetime clock</p></article><article className="min-w-0 bg-white border border-emerald-100 rounded-2xl p-3 shadow-sm"><div className="flex gap-1 items-center text-xs font-semibold text-slate-600"><CalendarHeart size={15} className="text-emerald-600 shrink-0"/>Completed weeks</div><p className="text-2xl font-bold text-slate-800 mt-2 tabular-nums">{life.totalWeeks.toLocaleString()}</p><p className="text-[10px] text-slate-500 mt-1">{life.totalDays.toLocaleString()} total days</p></article><article className="min-w-0 bg-white border border-emerald-100 rounded-2xl p-3 shadow-sm"><div className="flex gap-1 items-center text-xs font-semibold text-slate-600"><Hourglass size={15} className="text-amber-600 shrink-0"/>Exact age today</div><p className="text-xl font-bold text-slate-800 mt-2 tabular-nums">{life.years}y {life.months}m {life.days}d</p><p className="text-[10px] text-slate-500 mt-1 truncate">From {formatDate(profile.birthDate!)}</p></article></div></section>;
 export const Dashboard:React.FC<Props>=({profile,onNavigateToRegistry})=>{

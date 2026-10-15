@@ -1,10 +1,9 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {Download,Plus,Trash2} from 'lucide-react';
-import {Profile,MedicalRecord,RecordType} from '../types';
+import {Profile,MedicalRecord,RecordType,CareNote} from '../types';
 import {StorageService} from '../services/storage';
 import {getAge,localDateString} from '../services/date';
-type Extra={id:string;profileId:string;category:string;date:string;title:string;details:string;amount?:number};
-const KEY='koala_family_care_extra_v1';
+type Extra=CareNote;
 const categories=[
  ['Growth','📈','Record weight, height and head circumference. Compare growth with your clinician using WHO charts.'],
  ['Vaccinations','💉','Log doses and due dates; confirm Malaysia schedule with your clinic.'],
@@ -22,7 +21,7 @@ const categories=[
  ['Daily Challenge','🎨','Age-appropriate play and learning activities.'],
  ['Health Report','📄','Export a printable family health summary.']
 ] as const;
-const read=():Extra[]=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return []}};
+const read=():Extra[]=>StorageService.getCareNotes();
 const days=['சுப்ஹானல்லாஹ்','அல்ஹம்துலில்லாஹ்','அல்லாஹு அக்பர்','பிஸ்மில்லாஹ்','அஸ்தக்ஃபிருல்லாஹ்','லா இலாஹ இல்லல்லாஹ்','அல்லாஹும்ம சல்லி அலா முஹம்மத்'];
 const challenges=['ஒரு குட்டிக் கதை படிங்க','சேர்ந்து பாட்டு பாடுங்க','வண்ணங்களைப் பார்த்துப் பேசுங்க','பாதுகாப்பான விளையாட்டு நேரம் ஒதுக்குங்க','சின்னச் சின்ன அசைவுகளை ஊக்கப்படுத்துங்க','குடும்பத்துடன் சிரிச்சுப் பேசுங்க','இன்னைக்கு ஒரு நல்ல நினைவைப் பதிவு செய்யுங்க'];
 const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));
@@ -34,16 +33,16 @@ export const FamilyFeatures:React.FC<{profile:Profile}>=({profile})=>{
  const [details,setDetails]=useState('');
  const [date,setDate]=useState(localDateString());
  const [amount,setAmount]=useState('');
- useEffect(()=>{StorageService.getRecords(profile.id).then(setRecords)},[profile.id]);
+ useEffect(()=>{const update=()=>{StorageService.getRecords(profile.id).then(setRecords);setItems(read());};update();window.addEventListener('koalaDataChanged',update);return()=>window.removeEventListener('koalaDataChanged',update)},[profile.id]);
  const own=useMemo(()=>items.filter(x=>x.profileId===profile.id&&x.category===active).sort((a,b)=>b.date.localeCompare(a.date)),[items,profile.id,active]);
  const medical=records.filter(r=>active==='Growth'?[RecordType.WEIGHT,RecordType.HEIGHT,RecordType.HEAD_CIRCUMFERENCE].includes(r.type):active==='Vaccinations'?r.type===RecordType.VACCINATION:active==='Feeding & Sleep'?[RecordType.FEEDING,RecordType.SLEEP,RecordType.DIAPER].includes(r.type):active==='Medicines'?r.type===RecordType.MEDICINE:active==='Calendar'?r.type===RecordType.APPOINTMENT:true);
- const save=()=>{if(!title.trim())return;const next=[{id:StorageService.generateId(),profileId:profile.id,category:active,date,title:title.trim(),details:details.trim(),amount:active==='Expenses'?Number(amount)||0:undefined},...items];localStorage.setItem(KEY,JSON.stringify(next));setItems(next);setTitle('');setDetails('');setAmount('');};
- const remove=(id:string)=>{const next=items.filter(x=>x.id!==id);localStorage.setItem(KEY,JSON.stringify(next));setItems(next)};
+ const save=()=>{if(!title.trim())return;const next=[{id:StorageService.generateId(),profileId:profile.id,category:active,date,title:title.trim(),details:details.trim(),amount:active==='Expenses'?Number(amount)||0:undefined},...items];StorageService.saveCareNote(next[0]);setItems(next);setTitle('');setDetails('');setAmount('');};
+ const remove=(id:string)=>{const next=items.filter(x=>x.id!==id);StorageService.deleteCareNote(id);setItems(next)};
  const printReport=()=>{const w=window.open('','_blank');if(!w)return;const all=items.filter(x=>x.profileId===profile.id);const rows=[...records.map(r=>({date:r.date,type:r.type,title:r.title,details:r.details})),...all.map(r=>({date:r.date,type:r.category,title:r.title,details:r.details}))].sort((a,b)=>b.date.localeCompare(a.date));w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Family Health Report</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px;text-align:left}</style></head><body><h1>Koala Family Health Report</h1><p>'+escapeHtml(profile.name)+' — '+escapeHtml(getAge(profile.birthDate))+'</p><p>Allergies: '+escapeHtml(profile.allergies||'Not recorded')+'</p><table><tr><th>Date</th><th>Category</th><th>Title</th><th>Details</th></tr>'+rows.map(r=>'<tr><td>'+escapeHtml(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.title)+'</td><td>'+escapeHtml(r.details)+'</td></tr>').join('')+'</table></body></html>');w.document.close();w.print();};
  const [year,month,dayOfMonth]=date.split('-').map(Number);
  const day=Math.floor(Date.UTC(year,month-1,dayOfMonth)/86400000);
  const dayIndex=((day%7)+7)%7;
- return <div className="space-y-5"><div className="rounded-3xl bg-white p-5 border border-emerald-100"><h2 className="text-xl font-bold text-slate-800">Family Care Center</h2><p className="text-sm text-slate-500 mt-1">{profile.name} · {getAge(profile.birthDate)} · 15 family-care tools</p><p className="text-xs text-amber-700 mt-2">Additional care notes are saved on this device. Export regularly; they are not yet included in Firebase cloud sync or standard backups.</p></div>
+ return <div className="space-y-5"><div className="rounded-3xl bg-white p-5 border border-emerald-100"><h2 className="text-xl font-bold text-slate-800">Family Care Center</h2><p className="text-sm text-slate-500 mt-1">{profile.name} · {getAge(profile.birthDate)} · 15 family-care tools</p><p className="text-xs text-amber-700 mt-2">Care notes are included in backups and sync when Family Cloud is connected. Keep a backup for safety.</p></div>
  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">{categories.map(([name,emoji])=><button key={name} onClick={()=>setActive(name)} className={'text-left rounded-2xl border p-3 min-h-20 '+(active===name?'bg-emerald-100 border-emerald-400':'bg-white border-slate-100')}><span className="text-2xl">{emoji}</span><p className="text-xs font-semibold mt-2">{name}</p></button>)}</div>
  <section className="bg-white border border-slate-100 rounded-3xl p-4 md:p-6 space-y-4"><div><h3 className="font-bold text-lg">{active}</h3><p className="text-sm text-slate-500">{categories.find(c=>c[0]===active)?.[2]}</p></div>
  {active==='Daily Du’a'&&<div className="bg-teal-50 rounded-xl p-4"><p className="font-semibold text-teal-800">{days[dayIndex]}</p><p className="text-xs mt-2 text-teal-700">தினமும் குடும்பத்தோட சேர்ந்து அல்லாஹ்வை நினைவு கூருங்க.</p></div>}

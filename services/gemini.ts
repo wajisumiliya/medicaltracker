@@ -48,9 +48,9 @@ const makeDailyQuizBank=():Omit<DailyIslamicQuiz,'generatedAt'|'source'>[]=>{
   items.push({question:`குர்ஆனில் ${name} சூரா எத்தனையாவது சூரா?`,options,correctIndex:0,explanation:`${name} என்பது குர்ஆனின் ${i+1}வது சூரா.`});
   const choices=[name,surahNames[(i+17)%114],surahNames[(i+41)%114],surahNames[(i+73)%114]];
   items.push({question:`குர்ஆனில் ${i+1}வது சூராவின் பெயர் என்ன?`,options:choices,correctIndex:0,explanation:`குர்ஆனின் ${i+1}வது சூரா ${name}.`});
-  const next=surahNames[(i+1)%114];
+  const next=surahNames[i===113?112:i+1];
   const afterChoices=[next,surahNames[(i+18)%114],surahNames[(i+42)%114],surahNames[(i+74)%114]];
-  items.push({question:`குர்ஆன் வரிசையில் ${name} சூராவுக்குப் பிறகு வருவது எது?`,options:afterChoices,correctIndex:0,explanation:`${name} சூராவுக்குப் பிறகு ${next} சூரா வருகிறது.`});
+  items.push({question:i===113?`குர்ஆன் வரிசையில் ${name} சூராவுக்கு முன்பு வருவது எது?`:`குர்ஆன் வரிசையில் ${name} சூராவுக்குப் பிறகு வருவது எது?`,options:afterChoices,correctIndex:0,explanation:i===113?`${name} சூராவுக்கு முன்பு ${next} சூரா வருகிறது.`:`${name} சூராவுக்குப் பிறகு ${next} சூரா வருகிறது.`});
  }
  for(const [question,...options] of knowledgeQuestions){items.push({question,options,correctIndex:0,explanation:`சரியான பதில்: ${options[0]}.`});}
  return items;

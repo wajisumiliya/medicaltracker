@@ -58,7 +58,7 @@ const callGeminiProxy=async<T>(payload:Record<string,unknown>):Promise<T>=>{
   });
   if(response.status===401||response.status===403)throw new Error('CLOUD_AUTH_REQUIRED');
   if(response.status===429)throw new Error('429');
-  if(!response.ok)throw new Error('GEMINI_PROXY_'+response.status);
+  if(!response.ok){let detail='';try{const body=await response.json() as {error?:string};detail=body.error||'';}catch{}throw new Error('GEMINI_PROXY_'+response.status+(detail?': '+detail:''));}
   return await response.json() as T;
 };
 
@@ -101,7 +101,7 @@ export const GeminiService={
      if(String(error?.message).includes('429'))StorageService.setQuotaExceeded(60);
      const fallback=dailyFallbackInsight(profile,today);
      StorageService.saveDailyInsight(profile.id,today,fallback);
-     return fallback;
+     return {...fallback,source:'fallback',aiError:String(error?.message||'AI request failed') } as DailyFamilyInsight;
    }
  },
  ask:async(question:string,profile:Profile,records:MedicalRecord[]):Promise<string>=>{

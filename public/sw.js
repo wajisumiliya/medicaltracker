@@ -1,4 +1,4 @@
-const CACHE_NAME = 'koala-family-v3';
+const CACHE_NAME = 'koala-family-v4';
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/app-icon.svg'];
 
 self.addEventListener('install', event => {
@@ -21,8 +21,8 @@ self.addEventListener('fetch', event => {
     }).catch(() => caches.match('/index.html')));
     return;
   }
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+  event.respondWith(fetch(event.request).then(response => {
     if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
     return response;
-  })));
+  }).catch(() => caches.match(event.request)));
 });

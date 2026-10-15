@@ -1,12 +1,12 @@
 import React from 'react';
-import { LayoutDashboard, Stethoscope, History, BookOpenCheck, Settings } from 'lucide-react';
+import { LayoutDashboard, Stethoscope, History, BookOpenCheck, Settings, HeartPulse, PlusCircle } from 'lucide-react';
 interface Props{activeTab:string;setActiveTab:(tab:string)=>void;}
 export const Sidebar:React.FC<Props>=({activeTab,setActiveTab})=>{
- const items=[['dashboard','Dashboard',LayoutDashboard],['medical','Health log',Stethoscope],['history','History',History],['quiz','தினசரி இஸ்லாமிய வினா',BookOpenCheck],['settings','Family settings',Settings]] as const;
- return <><aside className="hidden md:flex fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex-col">
-  <div className="px-6 py-7"><h1 className="text-xl font-bold text-gray-900 font-heading">Koala Family</h1><p className="text-xs text-gray-400 mt-1">Health tracker</p></div>
-  <nav className="flex-1 px-3 space-y-1">{items.map(([id,label,Icon])=><button key={id} onClick={()=>setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold ${activeTab===id?'bg-rose-50 text-rose-700':'text-gray-500 hover:bg-gray-50'}`}><Icon size={19}/>{label}</button>)}</nav>
-  <div className="p-5 text-[11px] text-gray-400 border-t">Private family records on this device</div>
+ const items=[['dashboard','Dashboard',LayoutDashboard],['medical','Medical Records',Stethoscope],['history','History',History],['quiz','Daily Islamic Quiz',BookOpenCheck],['settings','Family Settings',Settings]] as const;
+ return <><aside className="hidden md:flex fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-emerald-100 flex-col">
+ <div className="px-6 py-7 flex gap-3 items-center"><div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><HeartPulse size={24}/></div><div><h1 className="text-xl font-bold text-slate-800 font-heading">Koala Family</h1><p className="text-xs text-emerald-700 mt-1">Medical Tracker</p></div></div>
+ <nav className="flex-1 px-3 space-y-2">{items.map(([id,label,Icon])=><button key={id} onClick={()=>setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab===id?'bg-emerald-100 text-emerald-800':'text-slate-500 hover:bg-emerald-50'}`}><Icon size={19}/>{label}</button>)}</nav>
+ <div className="m-4 p-4 bg-gradient-to-br from-emerald-100 to-rose-50 rounded-3xl text-center"><span className="text-4xl">🐨</span><p className="text-sm font-bold text-emerald-800 mt-2">Healthy Family</p><p className="text-xs text-emerald-700">Happier Tomorrow</p></div>
  </aside>
- <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t flex justify-around py-2">{items.map(([id,label,Icon])=><button key={id} onClick={()=>setActiveTab(id)} title={label} className={`p-2 ${activeTab===id?'text-rose-600':'text-gray-400'}`}><Icon size={21}/></button>)}</nav></>;
+ <nav aria-label="Main navigation" className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-t border-emerald-100 flex justify-around items-center py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg">{items.map(([id,label,Icon])=><button key={id} onClick={()=>setActiveTab(id)} aria-label={label} aria-current={activeTab===id?'page':undefined} className={`min-w-0 flex-1 flex flex-col items-center gap-1 px-1 py-1 rounded-xl ${activeTab===id?'text-emerald-700':'text-slate-400'}`}>{id==='medical'?<PlusCircle size={24}/>:<Icon size={21}/>}<span className="text-[10px] font-semibold truncate">{id==='dashboard'?'Home':id==='medical'?'Add':id==='quiz'?'Quiz':id==='settings'?'Family':'History'}</span></button>)}</nav></>;
 };

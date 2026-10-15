@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {CalendarDays,Download,Heart,Plus,Trash2} from 'lucide-react';
+import {Download,Plus,Trash2} from 'lucide-react';
 import {Profile,MedicalRecord,RecordType} from '../types';
 import {StorageService} from '../services/storage';
 import {getAge,localDateString} from '../services/date';
@@ -40,7 +40,8 @@ export const FamilyFeatures:React.FC<{profile:Profile}>=({profile})=>{
  const save=()=>{if(!title.trim())return;const next=[{id:StorageService.generateId(),profileId:profile.id,category:active,date,title:title.trim(),details:details.trim(),amount:active==='Expenses'?Number(amount)||0:undefined},...items];localStorage.setItem(KEY,JSON.stringify(next));setItems(next);setTitle('');setDetails('');setAmount('');};
  const remove=(id:string)=>{const next=items.filter(x=>x.id!==id);localStorage.setItem(KEY,JSON.stringify(next));setItems(next)};
  const printReport=()=>{const w=window.open('','_blank');if(!w)return;const all=items.filter(x=>x.profileId===profile.id);const rows=[...records.map(r=>({date:r.date,type:r.type,title:r.title,details:r.details})),...all.map(r=>({date:r.date,type:r.category,title:r.title,details:r.details}))].sort((a,b)=>b.date.localeCompare(a.date));w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Family Health Report</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px;text-align:left}</style></head><body><h1>Koala Family Health Report</h1><p>'+escapeHtml(profile.name)+' — '+escapeHtml(getAge(profile.birthDate))+'</p><p>Allergies: '+escapeHtml(profile.allergies||'Not recorded')+'</p><table><tr><th>Date</th><th>Category</th><th>Title</th><th>Details</th></tr>'+rows.map(r=>'<tr><td>'+escapeHtml(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.title)+'</td><td>'+escapeHtml(r.details)+'</td></tr>').join('')+'</table></body></html>');w.document.close();w.print();};
- const day=Math.floor(Date.UTC(...date.split('-').map((n,i)=>Number(n)-(i===1?1:0)) as [number,number,number])/86400000);
+ const [year,month,dayOfMonth]=date.split('-').map(Number);
+ const day=Math.floor(Date.UTC(year,month-1,dayOfMonth)/86400000);
  const dayIndex=((day%7)+7)%7;
  return <div className="space-y-5"><div className="rounded-3xl bg-white p-5 border border-emerald-100"><h2 className="text-xl font-bold text-slate-800">Family Care Center</h2><p className="text-sm text-slate-500 mt-1">{profile.name} · {getAge(profile.birthDate)} · 15 family-care tools</p><p className="text-xs text-amber-700 mt-2">Additional care notes are saved on this device. Export regularly; they are not yet included in Firebase cloud sync or standard backups.</p></div>
  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">{categories.map(([name,emoji])=><button key={name} onClick={()=>setActive(name)} className={'text-left rounded-2xl border p-3 min-h-20 '+(active===name?'bg-emerald-100 border-emerald-400':'bg-white border-slate-100')}><span className="text-2xl">{emoji}</span><p className="text-xs font-semibold mt-2">{name}</p></button>)}</div>

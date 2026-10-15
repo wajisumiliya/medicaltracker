@@ -55,16 +55,22 @@ async function verifyFirebaseUser(request) {
 async function callWorkersAI(ai, prompt, schema) {
   if (!ai) {
     const e = new Error('Workers AI binding is not configured');
-    e.status = 500;
+    e.status = 503;
     throw e;
   }
-  const result = await ai.run('@cf/meta/llama-3.1-8b-instruct-fp8', {
+  let result;
+  try { result = await ai.run('@cf/meta/llama-3.1-8b-instruct-fp8', {
     messages: [
       { role: 'system', content: 'Return only valid JSON. Do not use Markdown code fences.' },
       { role: 'user', content: prompt }
     ],
     response_format: { type: 'json_schema', json_schema: schema }
-  });
+  }); } catch (cause) {
+    console.error('Workers AI invocation failed', cause);
+    const e = new Error('Workers AI invocation failed');
+    e.status = 503;
+    throw e;
+  }
   return typeof result?.response === 'string' ? result.response : JSON.stringify(result);
 }
 
@@ -160,7 +166,7 @@ export default {
     } catch (error) {
       const status = error?.status || 500;
       return json(
-        { error: status >= 500 ? 'Secure AI service unavailable' : String(error?.message || 'Request failed') },
+        { error: status >= 500 ? (error?.message === 'Workers AI binding is not configured' ? 'AI_BINDING_MISSING' : error?.message === 'Workers AI invocation failed' ? 'AI_MODEL_FAILED' : 'AI_SERVER_ERROR') : String(error?.message || 'Request failed') },
         status
       );
     }

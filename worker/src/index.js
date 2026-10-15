@@ -91,8 +91,13 @@ export default {
       if (action === 'daily') {
         const name = clean(body?.profile?.name, 100) || 'the child';
         const age = clean(body?.profile?.age, 100) || 'not provided';
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(clean(body?.date,20)) ? clean(body.date,20) : new Date().toISOString().slice(0,10);
+        const dayNumber = Math.floor(Date.parse(date+'T12:00:00Z')/86400000);
+        const dailyTopics = ['வயதிற்கு ஏற்ற விளையாட்டு','உறக்கம் மற்றும் ஓய்வு','சீரான உணவு பழக்கம்','குடும்ப உரையாடல்','பாதுகாப்பான உடல் இயக்கம்','அன்பான பிணைப்பு','சுகாதாரம் மற்றும் பல் பராமரிப்பு'];
+        const dailyTopic = dailyTopics[((dayNumber%dailyTopics.length)+dailyTopics.length)%dailyTopics.length];
 
         const prompt =
+          'தேதி: '+date+'. இன்றைய முக்கிய தலைப்பு: '+dailyTopic+'. முந்தைய நாளின் தலைப்பை மீண்டும் பயன்படுத்த வேண்டாம். ' +
           name + '-க்கு இன்றைய ஆதரவான குறிப்பை உருவாக்கவும். குழந்தையின் தற்போதைய வயது: ' + age + '. ' +
           'முழுப் பதிலும் இயல்பான, எளிய தமிழில் மட்டுமே இருக்க வேண்டும். ஆங்கில வாக்கியங்களைப் பயன்படுத்த வேண்டாம். ' +
           name + ' அம்மாவிடம் அன்பாகப் பேசுவது போன்ற ஒரு சிறிய கற்பனைச் செய்தியையும், வயதிற்கு ஏற்ற பொதுவான உடல்நல ஆலோசனையை அம்மாவுக்கு ஒரு சுருக்கமான பத்தியாகவும் வழங்கவும். ' +

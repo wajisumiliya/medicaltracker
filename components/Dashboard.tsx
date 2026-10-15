@@ -36,7 +36,7 @@ const LifeMoments:React.FC<{profile:Profile;life:LifeStats;live:{birthday:TimePa
 export const Dashboard:React.FC<Props>=({profile,onNavigateToRegistry})=>{
  const [records,setRecords]=useState<MedicalRecord[]>([]);const [medicines,setMedicines]=useState<Medicine[]>([]);const [insight,setInsight]=useState<(DailyFamilyInsight&{aiError?:string})|null>(null);const [insightLoading,setInsightLoading]=useState(false);const [now,setNow]=useState(()=>new Date());const today=localDateString(now);
  const load=useCallback(()=>{StorageService.getRecords(profile.id).then(setRecords);StorageService.getMedicines(profile.id).then(setMedicines);},[profile.id]);
- const loadInsight=useCallback(async(force=false)=>{if(profile.kind!==ProfileKind.CHILD)return;setInsightLoading(true);setInsight(await GeminiService.getDailyFamilyInsight(profile,force));setInsightLoading(false);},[profile,today]);
+ const loadInsight=useCallback(async(force=false)=>{if(profile.kind!==ProfileKind.CHILD)return;setInsight(GeminiService.instantInsight(profile));setInsightLoading(true);try{setInsight(await GeminiService.getDailyFamilyInsight(profile,force));}finally{setInsightLoading(false);}},[profile,today]);
  useEffect(()=>{load();window.addEventListener('koalaDataChanged',load);return()=>window.removeEventListener('koalaDataChanged',load);},[load]);
  useEffect(()=>{setInsight(null);loadInsight();},[loadInsight]);
  useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),1000);const refresh=()=>setNow(new Date());document.addEventListener('visibilitychange',refresh);window.addEventListener('focus',refresh);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('focus',refresh);};},[]);

@@ -38,7 +38,7 @@ export const Dashboard:React.FC<Props>=({profile,onNavigateToRegistry})=>{
  const load=useCallback(()=>{StorageService.getRecords(profile.id).then(setRecords);StorageService.getMedicines(profile.id).then(setMedicines);},[profile.id]);
  const loadInsight=useCallback(async(force=false)=>{if(profile.kind!==ProfileKind.CHILD)return;setInsight(GeminiService.instantInsight(profile));setInsightLoading(true);try{setInsight(await GeminiService.getDailyFamilyInsight(profile,force));}finally{setInsightLoading(false);}},[profile,today]);
  useEffect(()=>{load();window.addEventListener('koalaDataChanged',load);return()=>window.removeEventListener('koalaDataChanged',load);},[load]);
- useEffect(()=>{setInsight(null);loadInsight();},[loadInsight]);
+ useEffect(()=>{setInsight(GeminiService.instantInsight(profile));loadInsight();},[loadInsight]);
  useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),1000);const refresh=()=>setNow(new Date());document.addEventListener('visibilitychange',refresh);window.addEventListener('focus',refresh);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('focus',refresh);};},[]);
  const latest=(type:RecordType)=>records.find(r=>r.type===type);
  const upcoming=records.filter(r=>(r.type===RecordType.APPOINTMENT||r.type===RecordType.VACCINATION)&&r.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,2);

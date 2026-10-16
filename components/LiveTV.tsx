@@ -23,7 +23,18 @@ export const LiveTV:React.FC=()=>{
  useEffect(reload,[]);
  useEffect(()=>{localStorage.setItem('koala_tv_favorites',JSON.stringify(favorites))},[favorites]);
  const available=useMemo(()=>new Set(streams.filter(s=>safeUrl(s.url)).map(s=>s.channel)),[streams]);
- const filtered=useMemo(()=>channels.filter(c=>!c.is_nsfw&&!c.closed&&available.has(c.id)&&(!onlyFavorites||favorites.includes(c.id))&&(category==='All'||categoryMap[category]?.some(x=>c.categories.includes(x)))&&(region==='All'||region==='Worldwide'||(region==='Malaysia'?c.country==='MY':region==='India'?c.country==='IN':region==='Tamil'||region==='Malayalam'||region==='Hindi'||region==='English'?c.name.toLowerCase().includes(region.toLowerCase()):true)&&c.name.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>a.name.localeCompare(b.name)),[channels,available,onlyFavorites,favorites,category,region,search]);
+ const filtered=useMemo(()=>{
+  const query=search.trim().toLowerCase();
+  return channels.filter(c=>{
+   if(c.is_nsfw||c.closed||!available.has(c.id))return false;
+   if(onlyFavorites&&!favorites.includes(c.id))return false;
+   if(category!=='All'&&!categoryMap[category]?.some(x=>c.categories.includes(x)))return false;
+   if(region==='Malaysia'&&c.country!=='MY')return false;
+   if(region==='India'&&c.country!=='IN')return false;
+   if(['Tamil','Malayalam','Hindi','English'].includes(region)&&!c.name.toLowerCase().includes(region.toLowerCase()))return false;
+   return c.name.toLowerCase().includes(query);
+  }).sort((a,b)=>a.name.localeCompare(b.name));
+ },[channels,available,onlyFavorites,favorites,category,region,search]);
  const stream=selected?streams.find(s=>s.channel===selected.id&&safeUrl(s.url)):undefined;
  const toggle=(id:string)=>setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
  return <div className="space-y-5 pb-10"><section className="rounded-[2rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-900 p-6 md:p-9 text-white shadow-xl"><div className="flex items-center gap-3"><Radio size={30} className="text-pink-300"/><div><p className="text-xs font-bold tracking-widest text-violet-200 uppercase">Koala Entertainment</p><h2 className="text-3xl md:text-4xl font-black">Live TV</h2></div></div><p className="mt-3 text-sm text-slate-200">Explore publicly listed live channels by category. Availability depends on broadcasters and your region.</p></section>

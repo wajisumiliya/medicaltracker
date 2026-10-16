@@ -33,8 +33,8 @@ const DoraKids:React.FC=()=>{
  const [playing,setPlaying]=useState<string|null>(null);
  const [season,setSeason]=useState<'classic'|'new'>('classic');
  const videos=[
-  {id:'7FWmHMT2Aag',title:'Dora & Boots — 5 Full Episodes',detail:'Official Dora & Friends · Approx. 2 hours'},
-  {id:'GPAYzaE-trs',title:'Dora & Boots — Musical Episodes',detail:'Official Dora & Friends · Approx. 90 minutes'}
+  {id:'zwlbKEh-98w',title:'Dora’s Fairytale Adventure — Full Episode',detail:'Official Dora & Friends · Full episode'},
+  {id:'y2T97OR2fPY',title:'Dora & Boots — Crystal Cave and More Episodes',detail:'Official Dora & Friends · 1-hour collection'}
  ];
  return <section className="space-y-5 pb-12">
   <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">Dora & Bujji Kids TV</h2><p className="mt-2 text-sm">Official Dora & Friends full-episode collections. Video quality and availability are controlled by YouTube.</p></div>

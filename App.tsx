@@ -29,10 +29,20 @@ const dailyThemes=[
  {name:'Sunshine',page:'#fffdf0',header:'#fff7d6',hero:'linear-gradient(110deg,#fef3c7,#fffbeb,#fce7f3)',accent:'#a16207'}
 ];
 const themeForDate=(date:string)=>{const [y,m,d]=date.split('-').map(Number);const day=Math.floor(Date.UTC(y,m-1,d)/86400000);return dailyThemes[((day%dailyThemes.length)+dailyThemes.length)%dailyThemes.length];};
-const DoraKids:React.FC=()=> <section className="space-y-5 pb-12">
- <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">டோரா & புஜ்ஜி — தமிழ்</h2><p className="mt-2 text-sm">Chutti TV-யில் வந்த Dora & Bujji தமிழ் episodes</p></div>
- <div className="rounded-2xl bg-white border p-6 space-y-3"><h3 className="font-bold text-xl">தமிழ் episodes தற்போது கிடைக்கவில்லை</h3><p className="text-slate-600 text-sm">முன்பு காட்டிய streaming provider links Access Denied என வந்ததால் நீக்கப்பட்டுள்ளன. Malaysia-வில் இயங்கும், தமிழ் audio கொண்ட, சட்டபூர்வமாக embed செய்ய அனுமதிக்கப்பட்ட full episodes இன்னும் உறுதிப்படுத்தப்படவில்லை.</p><p className="text-slate-600 text-sm">உறுதிப்படுத்தப்படாத video links அல்லது English episodes இங்கே காட்டப்படாது.</p></div>
+const DoraKids:React.FC=()=>{
+ const channels=[
+  {title:'Chutti TV — தமிழ் கார்ட்டூன்',description:'Official India Tamil kids channel · Dora / Doravin Payanangal broadcast schedule',url:'https://www.sunnetwork.in/tv-channel-details.aspx?Channelid=14'},
+  {title:'Chutti TV Tamil — Official Videos',description:'Official Chutti TV Tamil YouTube channel · clips, promos and available uploads',url:'https://www.youtube.com/@ChuttiTVTamil'},
+  {title:'Sun NXT — Kids & TV',description:'Licensed Sun Network viewing options · India access and subscription may apply',url:'https://www.sunnxt.com/'},
+  {title:'Sony YAY! Tamil',description:'Tamil cartoon TV channel · availability depends on local TV provider',url:'https://www.sonypicturesnetworks.com/sonyyay-launches-in-malaysia-in-tamil'}
+ ];
+ return <section className="space-y-5 pb-12">
+  <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">இந்திய தமிழ் கார்ட்டூன்கள்</h2><p className="mt-2 text-sm">Dora & Bujji, Chutti TV மற்றும் தமிழ் kids channels — official sources</p></div>
+  <div className="rounded-2xl border bg-white p-5"><h3 className="font-bold text-lg">டோராவின் பயணங்கள் (Dora & Bujji)</h3><p className="mt-2 text-sm text-slate-600">Chutti TV-யின் official schedule-ல் Doravin Payanangal இடம்பெறுகிறது. முழு தமிழ் episodes-க்கான நேரடி licensed embed stream இன்னும் உறுதிப்படுத்தப்படவில்லை.</p><a href="https://www.sunnetwork.in/tv-channel-details.aspx?Channelid=14" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 rounded-xl bg-purple-700 px-4 py-2 text-white text-sm">Chutti TV official schedule</a></div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{channels.map(v=><article key={v.title} className="rounded-2xl border bg-white p-5"><h3 className="font-bold">{v.title}</h3><p className="mt-2 text-sm text-slate-600">{v.description}</p><a href={v.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 rounded-xl bg-purple-700 px-4 py-2 text-white text-sm">Open official source ↗</a></article>)}</div>
+  <p className="text-sm text-slate-500">These are official channel and service links, not guaranteed full-episode streams. Playback, Tamil audio and HD quality depend on provider and region. No unverified or access-denied episode URLs are embedded.</p>
  </section>;
+};
 StorageService.initialize();
 const App:React.FC=()=>{const [auth,setAuth]=useState(!!StorageService.getUserData()?.isAuthenticated);const [name,setName]=useState('');const [pin,setPin]=useState('');const [error,setError]=useState('');const [tab,setTab]=useState('dashboard');const [profiles,setProfiles]=useState<Profile[]>(StorageService.getProfiles());const [selectedId,setSelectedId]=useState(StorageService.getSelectedProfileId());const [cloudStatus,setCloudStatus]=useState<CloudStatus>('offline');const [cloudUser,setCloudUser]=useState<FirebaseUser|null>(null);const [cloudRevision,setCloudRevision]=useState(0);
  const [themeDate,setThemeDate]=useState(()=>localDateString());

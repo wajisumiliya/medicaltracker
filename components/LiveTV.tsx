@@ -33,7 +33,7 @@ const parseTamilPlaylist=(data:string,source:string):{channels:Channel[];streams
 
 const groups=['All','Entertainment','Series / General','Movies','Kids','News','Sports','Music','Documentary','Education','Religious','Lifestyle'];
 const categoryMap:Record<string,string[]>={'Entertainment':['entertainment'],'Series / General':['general','series'],'Movies':['movies'],'Kids':['kids','animation'],'News':['news'],'Sports':['sports'],'Music':['music'],'Documentary':['documentary'],'Education':['education'],'Religious':['religious'],'Lifestyle':['lifestyle','cooking','travel']};
-const langs=[['All',''],['Tamil','tamil'],['Malayalam','malayalam'],['Hindi','hindi'],['English','english'],['Malaysia','MY'],['India','IN'],['Worldwide','world']];
+const langs=[['Tamil','tamil']];
 const safeUrl=(url:string)=>{try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:null}catch{return null}};
 type HlsInstance={loadSource:(url:string)=>void;attachMedia:(video:HTMLVideoElement)=>void;on:(event:string,callback:(event:string,data:{fatal?:boolean;details?:string})=>void)=>void;destroy:()=>void};
 type HlsConstructor={new(config?:Record<string,unknown>):HlsInstance;isSupported:()=>boolean;Events:{ERROR:string}};
@@ -96,7 +96,7 @@ export const LiveTV:React.FC=()=>{
  const [error,setError]=useState('');
  const [category,setCategory]=useState('All');
  const [view,setView]=useState<'live'|'serials'>('live');
- const [region,setRegion]=useState('All');
+ const [region,setRegion]=useState('Tamil');
  const [search,setSearch]=useState('');
  const [favorites,setFavorites]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('koala_tv_favorites')||'[]')}catch{return []}});
  const [onlyFavorites,setOnlyFavorites]=useState(false);
@@ -142,10 +142,8 @@ export const LiveTV:React.FC=()=>{
    if(c.is_nsfw||c.closed||!available.has(c.id))return false;
    if(onlyFavorites&&!favorites.includes(c.id))return false;
    if(category!=='All'&&!categoryMap[category]?.some(x=>c.categories.includes(x)))return false;
-   if(region==='Malaysia'&&c.country!=='MY')return false;
-   if(region==='India'&&c.country!=='IN')return false;
-   const languageCodes:Record<string,string[]>={Tamil:['tam'],Malayalam:['mal'],Hindi:['hin'],English:['eng']};
-   if(languageCodes[region]&&!c.languages?.some(code=>languageCodes[region].includes(code.toLowerCase()))&&!c.name.toLowerCase().includes(region.toLowerCase()))return false;
+   // This directory is Tamil-only regardless of UI state or imported playlist source.
+   if(!c.languages?.some(code=>code.toLowerCase()==='tam')&&!/\btamil\b/i.test(c.name))return false;
    return c.name.toLowerCase().includes(query);
   }).sort((a,b)=>a.name.localeCompare(b.name));
  },[channels,available,onlyFavorites,favorites,category,region,search]);
@@ -153,7 +151,7 @@ export const LiveTV:React.FC=()=>{
  const stream=alternatives[Math.min(streamIndex,Math.max(0,alternatives.length-1))];
  const openChannel=(channel:Channel)=>{setStreamIndex(0);setSelected(channel)};
  const toggle=(id:string)=>setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
- return <div className="space-y-5 pb-10"><section className="rounded-[2rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-900 p-6 md:p-9 text-white shadow-xl"><div className="flex items-center gap-3"><Radio size={30} className="text-pink-300"/><div><p className="text-xs font-bold tracking-widest text-violet-200 uppercase">Koala Entertainment</p><h2 className="text-3xl md:text-4xl font-black">Live TV</h2></div></div><p className="mt-3 text-sm text-slate-200">Explore publicly listed live channels by category. Availability depends on broadcasters and your region.</p></section>
+ return <div className="space-y-5 pb-10"><section className="rounded-[2rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-900 p-6 md:p-9 text-white shadow-xl"><div className="flex items-center gap-3"><Radio size={30} className="text-pink-300"/><div><p className="text-xs font-bold tracking-widest text-violet-200 uppercase">Koala Entertainment</p><h2 className="text-3xl md:text-4xl font-black">Live TV</h2></div></div><p className="mt-3 text-sm text-slate-200">Browse Tamil-language live channels only. Availability depends on broadcasters and your region.</p></section>
  <div className="flex gap-2 rounded-2xl bg-white p-2 border border-slate-100"><button onClick={()=>setView('live')} className={'flex-1 rounded-xl px-4 py-3 font-bold text-sm '+(view==='live'?'bg-indigo-700 text-white':'text-slate-600')}>📺 Free Live TV</button><button onClick={()=>setView('serials')} className={'flex-1 rounded-xl px-4 py-3 font-bold text-sm '+(view==='serials'?'bg-indigo-700 text-white':'text-slate-600')}>🎬 Free Tamil Serials</button></div>
  {view==='serials'?<section className="space-y-4"><div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-5"><h3 className="text-lg font-extrabold text-indigo-900">Tamil Serials · Watch inside Koala</h3><p className="mt-2 text-sm text-indigo-800">Only officially authorized, embeddable free episodes will appear here. No redirects, subscriptions bypass, or unlicensed copies.</p></div>{officialEpisodes.length===0?<div className="rounded-3xl bg-white border border-slate-100 p-8 text-center"><div className="text-4xl">🎬</div><h4 className="font-bold text-slate-900 mt-3">No verified free episodes available yet</h4><p className="text-sm text-slate-500 mt-2">We will not show external YouTube links or pretend paid episodes can play here.</p></div>:<div className="grid sm:grid-cols-2 gap-4">{officialEpisodes.map(episode=><article key={episode.id} className="rounded-3xl bg-white border p-4"><h4 className="font-bold mb-1">{episode.title}</h4><p className="text-xs text-slate-500 mb-3">{episode.channel}</p><iframe title={episode.title} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(episode.videoId)}`} className="w-full aspect-video rounded-2xl bg-black" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen loading="lazy" referrerPolicy="strict-origin-when-cross-origin"/></article>)}</div>}</section>:<>
  <div className="rounded-3xl bg-white p-4 md:p-6 border border-slate-100 space-y-4"><div className="flex flex-wrap gap-2 items-center"><label className="relative flex-1 min-w-48"><Search size={17} className="absolute top-3 left-3 text-slate-400"/><input value={search} onChange={e=>{setSearch(e.target.value);setPage(0)}} placeholder="Search channels..." className="w-full border border-slate-200 rounded-xl py-2.5 pl-10 pr-3 text-sm"/></label><select aria-label="Language or country" value={region} onChange={e=>{setRegion(e.target.value);setPage(0)}} className="border border-slate-200 rounded-xl p-2.5 text-sm">{langs.map(([name])=><option key={name}>{name}</option>)}</select><button onClick={()=>setOnlyFavorites(v=>!v)} aria-pressed={onlyFavorites} className={'rounded-xl px-3 py-2.5 text-sm flex gap-2 items-center '+(onlyFavorites?'bg-pink-100 text-pink-800':'bg-slate-100 text-slate-700')}><Heart size={16}/>Favorites</button><button onClick={()=>{setVerifiedOnly(v=>!v);setPage(0)}} aria-pressed={verifiedOnly} className={'rounded-xl px-3 py-2.5 text-sm font-bold '+(verifiedOnly?'bg-emerald-700 text-white':'bg-slate-100 text-slate-700')}>✓ Played successfully only</button><button onClick={reload} aria-label="Refresh channels" className="rounded-xl bg-slate-100 p-2.5"><RefreshCw size={17}/></button></div><div className="flex gap-2 overflow-x-auto pb-2">{groups.map(g=><button key={g} onClick={()=>{setCategory(g);setPage(0)}} aria-pressed={category===g} className={'shrink-0 px-4 py-2 rounded-full text-xs font-bold '+(category===g?'bg-indigo-700 text-white':'bg-slate-100 text-slate-600')}>{g}</button>)}</div></div>

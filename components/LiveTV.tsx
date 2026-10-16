@@ -3,6 +3,34 @@ import {Heart,Search,RefreshCw,Radio} from 'lucide-react';
 type Channel={id:string;name:string;country:string;categories:string[];languages?:string[];is_nsfw?:boolean;closed?:string|null;website?:string|null};
 type Stream={channel:string|null;url:string;labels?:string[]};
 const BASE='https://iptv-org.github.io/api/';
+const TAMIL_SOURCES=[
+ {name:'Tamil Local IPTV',url:'https://raw.githubusercontent.com/amazeyourself/tamil-local-iptv/main/channels.m3u'},
+ {name:'Pocket TV',url:'https://raw.githubusercontent.com/jgog/My-IPTV/main/playlist.m3u'},
+ {name:'Tamil IPTV',url:'https://bit.ly/3h5yNZM'}
+] as const;
+// GitHub playlist publication does not establish broadcaster authorization.
+// Add streams here only after confirming the broadcaster permits third-party playback.
+const LICENSED_TAMIL_URLS:ReadonlySet<string>=new Set<string>();
+const parseTamilPlaylist=(data:string,source:string):{channels:Channel[];streams:Stream[]}=>{
+ const channels:Channel[]=[];const streams:Stream[]=[];let title='';let group='';
+ for(const raw of data.split(/\r?\n/)){
+  const line=raw.trim();
+  if(line.startsWith('#EXTINF:')){
+   title=line.substring(line.indexOf(',')+1).trim();
+   group=line.match(/group-title="([^"]*)"/i)?.[1]||'';
+  }else if(line&&!line.startsWith('#')){
+   const url=safeUrl(line);
+   if(title&&url&&LICENSED_TAMIL_URLS.has(url)){
+    const id='tamil-'+source.replace(/[^a-z0-9]/gi,'').toLowerCase()+'-'+channels.length;
+    channels.push({id,name:title,country:'IN',categories:[/news/i.test(group)?'news':/music/i.test(group)?'music':'general'],languages:['tam']});
+    streams.push({channel:id,url});
+   }
+   title='';group='';
+  }
+ }
+ return {channels,streams};
+};
+
 const groups=['All','Entertainment','Series / General','Movies','Kids','News','Sports','Music','Documentary','Education','Religious','Lifestyle'];
 const categoryMap:Record<string,string[]>={'Entertainment':['entertainment'],'Series / General':['general','series'],'Movies':['movies'],'Kids':['kids','animation'],'News':['news'],'Sports':['sports'],'Music':['music'],'Documentary':['documentary'],'Education':['education'],'Religious':['religious'],'Lifestyle':['lifestyle','cooking','travel']};
 const langs=[['All',''],['Tamil','tamil'],['Malayalam','malayalam'],['Hindi','hindi'],['English','english'],['Malaysia','MY'],['India','IN'],['Worldwide','world']];
@@ -79,7 +107,22 @@ export const LiveTV:React.FC=()=>{
  const markPlayback=(url:string,status:'works'|'failed')=>setPlaybackResults(prev=>({...prev,[url]:status}));
  useEffect(()=>{localStorage.setItem('koala_tv_playback_results_v1',JSON.stringify(playbackResults))},[playbackResults]);
  const [streamIndex,setStreamIndex]=useState(0);
- const reload=()=>{setLoading(true);setError('');Promise.all([fetch(BASE+'channels.json').then(r=>{if(!r.ok)throw Error('Channels unavailable');return r.json()}),fetch(BASE+'streams.json').then(r=>{if(!r.ok)throw Error('Streams unavailable');return r.json()})]).then(([c,s])=>{setChannels(c);setStreams(s)}).catch(()=>setError('Could not load live channel listings. Check your connection and retry.')).finally(()=>setLoading(false))};
+ const reload=()=>{
+  setLoading(true);setError('');
+  Promise.all([
+   fetch(BASE+'channels.json').then(r=>{if(!r.ok)throw Error('Channels unavailable');return r.json() as Promise<Channel[]>}),
+   fetch(BASE+'streams.json').then(r=>{if(!r.ok)throw Error('Streams unavailable');return r.json() as Promise<Stream[]>}),
+   Promise.allSettled(TAMIL_SOURCES.map(async source=>{
+    const response=await fetch(source.url);
+    if(!response.ok)throw Error('Playlist unavailable');
+    return parseTamilPlaylist(await response.text(),source.name);
+   }))
+  ]).then(([baseChannels,baseStreams,extra])=>{
+   const allChannels=[...baseChannels];const allStreams=[...baseStreams];
+   for(const result of extra){if(result.status==='fulfilled'){allChannels.push(...result.value.channels);allStreams.push(...result.value.streams)}}
+   setChannels(allChannels);setStreams(allStreams);
+  }).catch(()=>setError('Could not load live channel listings. Check your connection and retry.')).finally(()=>setLoading(false));
+ };
  useEffect(reload,[]);
  useEffect(()=>{localStorage.setItem('koala_tv_favorites',JSON.stringify(favorites))},[favorites]);
  const streamsByChannel=useMemo(()=>{

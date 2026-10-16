@@ -4,9 +4,9 @@ type Channel={id:string;name:string;country:string;categories:string[];languages
 type Stream={channel:string|null;url:string;labels?:string[]};
 const BASE='https://iptv-org.github.io/api/';
 const TAMIL_SOURCES=[
- {name:'Tamil Local IPTV',url:'https://raw.githubusercontent.com/amazeyourself/tamil-local-iptv/main/channels.m3u'},
+ {name:'Tamil Local IPTV',url:'https://raw.githubusercontent.com/amazeyourself/tamil-local-iptv/main/channels-nortmp.m3u'},
  {name:'Pocket TV',url:'https://raw.githubusercontent.com/jgog/My-IPTV/main/playlist.m3u'},
- {name:'Tamil IPTV',url:'https://bit.ly/3h5yNZM'}
+ {name:'Tamil IPTV',url:'https://github.com/prabhacap/IPTV/releases/latest/download/playlist-tamil-local.m3u'}
 ] as const;
 // GitHub playlist publication does not establish broadcaster authorization.
 // Add streams here only after confirming the broadcaster permits third-party playback.
@@ -93,6 +93,7 @@ export const LiveTV:React.FC=()=>{
  const [channels,setChannels]=useState<Channel[]>([]);
  const [streams,setStreams]=useState<Stream[]>([]);
  const [loading,setLoading]=useState(true);
+ const [playlistReport,setPlaylistReport]=useState('');
  const [error,setError]=useState('');
  const [category,setCategory]=useState('All');
  const [view,setView]=useState<'live'|'serials'>('live');
@@ -119,6 +120,8 @@ export const LiveTV:React.FC=()=>{
    }))
   ]).then(([baseChannels,baseStreams,extra])=>{
    const allChannels=[...baseChannels];const allStreams=[...baseStreams];
+   const sourceReport=extra.map((result,index)=>result.status==='fulfilled'?`${TAMIL_SOURCES[index].name}: ${result.value.channels.length} licensed playable channels`:`${TAMIL_SOURCES[index].name}: unavailable`);
+   setPlaylistReport(sourceReport.join(' · '));
    for(const result of extra){if(result.status==='fulfilled'){allChannels.push(...result.value.channels);allStreams.push(...result.value.streams)}}
    setChannels(allChannels);setStreams(allStreams);
   }).catch(()=>setError('Could not load live channel listings. Check your connection and retry.')).finally(()=>setLoading(false));
@@ -158,5 +161,5 @@ export const LiveTV:React.FC=()=>{
  {loading?<p role="status" className="p-6">Loading TV channel directory…</p>:error?<p role="alert" className="p-5 rounded-2xl bg-rose-50 text-rose-700">{error}</p>:<><p className="text-sm text-slate-500">{filtered.length} listed channels with stream links · Showing {Math.min(filtered.length,page*48+1)}–{Math.min(filtered.length,(page+1)*48)}</p><div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">{filtered.slice(page*48,(page+1)*48).map(c=><div key={c.id} className="rounded-2xl border border-slate-100 bg-white p-4 flex flex-col gap-3 shadow-sm"><div className="flex items-start justify-between gap-2"><div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl">📺</div><button aria-label={'Favorite '+c.name} onClick={()=>toggle(c.id)} className={favorites.includes(c.id)?'text-pink-600':'text-slate-300'}><Heart size={20} fill={favorites.includes(c.id)?'currentColor':'none'}/></button></div><div className="flex-1"><p className="font-bold text-sm text-slate-800 line-clamp-2">{c.name}</p><p className="text-xs text-slate-500 mt-1">{c.country} · {c.categories.join(', ')||'TV'}</p></div><button onClick={()=>openChannel(c)} className="bg-indigo-700 text-white rounded-xl px-3 py-2 text-sm font-bold">Watch / Open</button></div>)}</div><div className="flex justify-center items-center gap-4"><button disabled={page===0} onClick={()=>setPage(p=>p-1)} className="disabled:opacity-30 rounded-xl bg-white px-4 py-2">Previous</button><span className="text-sm">{page+1} / {Math.max(1,Math.ceil(filtered.length/48))}</span><button disabled={(page+1)*48>=filtered.length} onClick={()=>setPage(p=>p+1)} className="disabled:opacity-30 rounded-xl bg-white px-4 py-2">Next</button></div></>}
  {selected&&<div role="dialog" aria-modal="true" aria-label="Live TV channel" className="fixed inset-0 z-[100] bg-slate-950/80 p-4 flex items-center justify-center"><div className="w-full max-w-3xl rounded-3xl bg-white p-5 space-y-4"><div className="flex justify-between items-center gap-3"><h3 className="font-bold text-xl">{selected.name}</h3><button onClick={()=>setSelected(null)} className="rounded-xl bg-slate-100 px-4 py-2">Close</button></div>{stream?<HlsVideo key={stream.url} url={safeUrl(stream.url)!} onSuccess={()=>markPlayback(stream.url,"works")} onFailure={()=>markPlayback(stream.url,"failed")}/>:<p className="text-sm text-rose-700">No usable stream links remain for this channel on this device.</p>}<div className="flex flex-wrap items-center gap-2"><span className="text-xs text-slate-500">{alternatives.length} available stream link(s) · Source {streamIndex+1}</span>{alternatives.length>1&&<button onClick={()=>setStreamIndex(i=>(i+1)%alternatives.length)} className="rounded-xl bg-indigo-100 text-indigo-800 px-4 py-2 text-sm font-bold">Try next stream</button>}</div><p className="text-xs text-slate-500">HLS (.m3u8) playback is supported where the browser and stream allow it. Some channels are offline, geo-restricted, or blocked by CORS.</p><div className="flex flex-wrap gap-3"></div></div></div>}
  </>}
- <p className="text-xs text-slate-500">Directory data: iptv-org community API. Failed streams are hidden on this device after playback errors. “Played successfully only” filters streams confirmed by playback on this device. Listed streams are not guaranteed to work or be licensed in every region. Paid/DRM channels are not bypassed. No medical data is sent to the TV directory.</p></div>
+ <p className="text-xs text-slate-500">{playlistReport} Directory data: iptv-org community API. Failed streams are hidden on this device after playback errors. “Played successfully only” filters streams confirmed by playback on this device. Listed streams are not guaranteed to work or be licensed in every region. Paid/DRM channels are not bypassed. No medical data is sent to the TV directory.</p></div>
 };

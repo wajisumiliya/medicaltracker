@@ -29,24 +29,11 @@ const dailyThemes=[
  {name:'Sunshine',page:'#fffdf0',header:'#fff7d6',hero:'linear-gradient(110deg,#fef3c7,#fffbeb,#fce7f3)',accent:'#a16207'}
 ];
 const themeForDate=(date:string)=>{const [y,m,d]=date.split('-').map(Number);const day=Math.floor(Date.UTC(y,m-1,d)/86400000);return dailyThemes[((day%dailyThemes.length)+dailyThemes.length)%dailyThemes.length];};
-const DoraKids:React.FC=()=>{
- const [season,setSeason]=useState(1);
- const episodes=[
-  ['The Legend of the Big Red Chicken','Lost and Found','Hic-Boom-Ohh','Dora Wants to Visit the Beach','We All Scream for Ice Cream','Choo Choo','Treasure Island','Three Little Piggies','The Big River','Berry Hunt'],
-  ['The Big Storm','Boots Toy Fire Truck','The Magic Stick','The Missing Piece','Lost Squeaky','Rojo the Firetruck','Lost Map','El Día de las Madres','The Golden Explorers','A Present for Santa'],
-  ['Book of Rhymes','Trucks in Trouble','The Sun and Red Rooster','A Metal Robot','Benny the Potato','Space Creatures','The Lost City','Animal Rescue Shelter','Save the Puppy','King and Magic Crown'],
-  ['Star Catcher','Family Dinner','Dora’s Present','The Fast Swiper','La Maestra de Música','Daisy, La Quinceañera','Save Diego','Baby Jaguar’s Roar','A Crown for King Juan el Bobo','Dora’s Got a Puppy'],
-  ['Dora’s Jack-in-the-Box','Bark, Bark to Play Park','Dora Saves Three Kings Day','Isa’s Unicorn Flowers','Benny’s Big Race','First Day of School','The Backpack Parade','Bouncy Boots','The Mayan Adventure','Dora Saves the Three Little Piggies']
- ];
- const link='https://www.tataplaybinge.com/watch/shows/dora-the-explorer/31200';
- return <section className="space-y-5 pb-12">
-  <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">டோரா & புஜ்ஜி — தமிழ்</h2><p className="mt-2 text-sm">Dora the Explorer · Tamil audio listed by official streaming provider · Episode guide</p></div>
-  <p className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-950">தமிழ் audio-வில் பார்க்க Tata Play Binge / JioHotstar போன்ற licensed service தேவைப்படலாம். இது Koala-வில் நேரடியாக stream ஆகாது. இந்தியா வெளியே கிடைப்பது உறுதி செய்யப்படவில்லை.</p>
-  <div className="flex gap-2 overflow-x-auto">{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setSeason(n)} className={'shrink-0 rounded-xl px-4 py-2 '+(season===n?'bg-purple-700 text-white':'bg-white border')}>Season {n}</button>)}</div>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{episodes[season-1].map((name,i)=><article key={name} className="bg-white border rounded-xl p-4 flex justify-between items-center gap-3"><div><h3 className="font-semibold">Episode {i+1}: {name}</h3><p className="text-xs text-slate-500">Tamil audio option listed by provider · ~24 min</p></div><a href={link} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-purple-700 text-white px-3 py-2 text-sm">Watch officially</a></article>)}</div>
-  <p className="text-sm text-slate-500">Additional seasons and the full licensed episode list are available on the provider website. No unauthorized uploads or unverified Tamil YouTube embeds.</p>
+const DoraKids:React.FC=()=> <section className="space-y-5 pb-12">
+ <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">டோரா & புஜ்ஜி — தமிழ்</h2><p className="mt-2 text-sm">Dora the Explorer · Tamil-language viewing options</p></div>
+ <div className="bg-white rounded-2xl border p-5 space-y-3"><h3 className="font-bold text-xl">தமிழில் Episodes பார்க்க</h3><p className="text-sm text-slate-600">English episodes நீக்கப்பட்டுள்ளன. Tamil-dubbed முழு episodes-க்கான உரிமம் பெற்ற, embed செய்யக்கூடிய source இன்னும் உறுதிப்படுத்தப்படவில்லை. கீழே உள்ள provider-ல் Tamil audio மற்றும் உங்கள் பகுதியில் கிடைக்கும் seasons-ஐ சரிபார்க்கவும்.</p><a href="https://www.tataplaybinge.com/" target="_blank" rel="noopener noreferrer" className="inline-block rounded-xl bg-purple-700 text-white px-5 py-3">Check official streaming options</a></div>
+ <p className="text-sm text-slate-500">Tamil audio, subscription, HD quality and availability depend on the streaming provider. Koala does not host or copy copyrighted episodes.</p>
  </section>;
-};
 StorageService.initialize();
 const App:React.FC=()=>{const [auth,setAuth]=useState(!!StorageService.getUserData()?.isAuthenticated);const [name,setName]=useState('');const [pin,setPin]=useState('');const [error,setError]=useState('');const [tab,setTab]=useState('dashboard');const [profiles,setProfiles]=useState<Profile[]>(StorageService.getProfiles());const [selectedId,setSelectedId]=useState(StorageService.getSelectedProfileId());const [cloudStatus,setCloudStatus]=useState<CloudStatus>('offline');const [cloudUser,setCloudUser]=useState<FirebaseUser|null>(null);const [cloudRevision,setCloudRevision]=useState(0);
  const [themeDate,setThemeDate]=useState(()=>localDateString());

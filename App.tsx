@@ -53,14 +53,13 @@ const Movies:React.FC=()=>{
   const timer=setTimeout(async()=>{
    setLoading(true);setError('');
    try{
-    const params=new URLSearchParams({page:String(page),include_adult:'false',sort_by:'popularity.desc',with_original_language:categories.find(x=>x[0]===language)?.[1]||'en'});
     const q=search.trim();
     const url='https://medicaltracker-ai.workers.dev/movies?'+new URLSearchParams({page:String(page),language:categories.find(x=>x[0]===language)?.[1]||'en',...(q?{query:q}:{})});
     const res=await fetch(url,{signal:controller.signal});
-    if(!res.ok)throw Error(res.status===503?'Movie catalog not configured: add TMDB_READ_TOKEN secret to Cloudflare Worker':'Movie database unavailable ('+res.status+')');
+    if(!res.ok){const detail=await res.json().catch(()=>({}));throw Error(res.status===503?'Movie catalog is not configured. Set TMDB_READ_TOKEN in the medicaltracker-ai Worker and deploy it.':res.status===404?'Movies endpoint is not deployed to medicaltracker-ai Worker yet.':String(detail.error||'Movie database unavailable')+' ('+res.status+')')}
     const data=await res.json();
     if(!controller.signal.aborted){setResults(Array.isArray(data.results)?data.results:[]);setTotal(Number(data.total_results)||0)}
-   }catch(e){if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Unable to load movies')}
+   }catch(e){if(!controller.signal.aborted){setResults([]);setTotal(0);setError(e instanceof TypeError?'Cannot reach the movie API. Check the medicaltracker-ai Worker URL, deployment and CORS configuration.':e instanceof Error?e.message:'Unable to load movies')}}
    finally{if(!controller.signal.aborted)setLoading(false)}
   },300);
   return()=>{clearTimeout(timer);controller.abort()}

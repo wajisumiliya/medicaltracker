@@ -30,17 +30,17 @@ const dailyThemes=[
 ];
 const themeForDate=(date:string)=>{const [y,m,d]=date.split('-').map(Number);const day=Math.floor(Date.UTC(y,m-1,d)/86400000);return dailyThemes[((day%dailyThemes.length)+dailyThemes.length)%dailyThemes.length];};
 const DoraKids:React.FC=()=>{
- const channels=[
-  {title:'Chutti TV — தமிழ் கார்ட்டூன்',description:'Official India Tamil kids channel · Dora / Doravin Payanangal broadcast schedule',url:'https://www.sunnetwork.in/tv-channel-details.aspx?Channelid=14'},
-  {title:'Chutti TV Tamil — Official Videos',description:'Official Chutti TV Tamil YouTube channel · clips, promos and available uploads',url:'https://www.youtube.com/@ChuttiTVTamil'},
-  {title:'Sun NXT — Kids & TV',description:'Licensed Sun Network viewing options · India access and subscription may apply',url:'https://www.sunnxt.com/'},
-  {title:'Sony YAY! Tamil',description:'Tamil cartoon TV channel · availability depends on local TV provider',url:'https://www.sonypicturesnetworks.com/sonyyay-launches-in-malaysia-in-tamil'}
- ];
+ const channelId='UCEbzxI4nIFXsT2OKyV04LpQ';
+ const [showPlayer,setShowPlayer]=useState(false);
+ const [playerError,setPlayerError]=useState(false);
+ const official='https://www.youtube.com/channel/'+channelId+'/videos';
  return <section className="space-y-5 pb-12">
-  <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">இந்திய தமிழ் கார்ட்டூன்கள்</h2><p className="mt-2 text-sm">Dora & Bujji, Chutti TV மற்றும் தமிழ் kids channels — official sources</p></div>
-  <div className="rounded-2xl border bg-white p-5"><h3 className="font-bold text-lg">டோராவின் பயணங்கள் (Dora & Bujji)</h3><p className="mt-2 text-sm text-slate-600">Chutti TV-யின் official schedule-ல் Doravin Payanangal இடம்பெறுகிறது. முழு தமிழ் episodes-க்கான நேரடி licensed embed stream இன்னும் உறுதிப்படுத்தப்படவில்லை.</p><a href="https://www.sunnetwork.in/tv-channel-details.aspx?Channelid=14" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 rounded-xl bg-purple-700 px-4 py-2 text-white text-sm">Chutti TV official schedule</a></div>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{channels.map(v=><article key={v.title} className="rounded-2xl border bg-white p-5"><h3 className="font-bold">{v.title}</h3><p className="mt-2 text-sm text-slate-600">{v.description}</p><a href={v.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 rounded-xl bg-purple-700 px-4 py-2 text-white text-sm">Open official source ↗</a></article>)}</div>
-  <p className="text-sm text-slate-500">These are official channel and service links, not guaranteed full-episode streams. Playback, Tamil audio and HD quality depend on provider and region. No unverified or access-denied episode URLs are embedded.</p>
+ <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">தமிழ் கார்ட்டூன் TV</h2><p className="mt-2 text-sm">Sony YAY! Tamil — official cartoons and episodes</p></div>
+ <div className="rounded-2xl border bg-white p-5 space-y-3"><h3 className="font-bold text-xl">Sony YAY! Tamil · Official YouTube</h3><p className="text-sm text-slate-600">Honey Bunny, Kicko & Super Speedo, Paap-O-Meter மற்றும் பல தமிழ் cartoons. Channel-ன் official YouTube uploads மட்டும்; English அல்லது unverified video links இல்லை.</p>
+ {!showPlayer?<button onClick={()=>{setPlayerError(false);setShowPlayer(true)}} className="rounded-xl bg-purple-700 px-5 py-3 text-white font-semibold">▶ Play Tamil cartoons in Koala</button>:<div className="space-y-3"><iframe title="Sony YAY Tamil official videos" className="w-full aspect-video rounded-xl bg-black" src={'https://www.youtube-nocookie.com/embed/videoseries?list=UU'+channelId.slice(2)} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen onError={()=>setPlayerError(true)}/><p className="text-xs text-slate-500">YouTube may restrict playlist embedding or playback by region. If the player does not load, use the official channel link below.</p>{playerError&&<p className="text-sm text-rose-700">Embedded playback is unavailable.</p>}<button onClick={()=>setShowPlayer(false)} className="rounded-xl border px-4 py-2">Close player</button></div>}
+ <a href={official} target="_blank" rel="noopener noreferrer" className="inline-block rounded-xl border border-purple-700 px-4 py-2 text-purple-700 font-semibold">Open Sony YAY! Tamil official videos ↗</a></div>
+ <div className="rounded-2xl border bg-white p-5"><h3 className="font-bold">டோரா & புஜ்ஜி (Dora)</h3><p className="mt-2 text-sm text-slate-600">பழைய Dora தமிழ் முழு episodes-க்கு அனுமதிக்கப்பட்ட playable stream இன்னும் உறுதிப்படுத்தப்படவில்லை. Sony YAY! Tamil-ல் Dora இருப்பதாகக் கூறவில்லை.</p></div>
+ <p className="text-xs text-slate-500">The embedded player uses YouTube's official channel uploads playlist. YouTube controls playback, video quality and embedding permissions; some videos may not play inside Koala.</p>
  </section>;
 };
 StorageService.initialize();

@@ -30,18 +30,21 @@ const dailyThemes=[
 ];
 const themeForDate=(date:string)=>{const [y,m,d]=date.split('-').map(Number);const day=Math.floor(Date.UTC(y,m-1,d)/86400000);return dailyThemes[((day%dailyThemes.length)+dailyThemes.length)%dailyThemes.length];};
 const DoraKids:React.FC=()=>{
- const [playing,setPlaying]=useState<string|null>(null);
- const [season,setSeason]=useState<'classic'|'new'>('classic');
- const videos=[
-  {id:'zwlbKEh-98w',title:'Dora’s Fairytale Adventure — Full Episode',detail:'Official Dora & Friends · Full episode'},
-  {id:'y2T97OR2fPY',title:'Dora & Boots — Crystal Cave and More Episodes',detail:'Official Dora & Friends · 1-hour collection'}
+ const [season,setSeason]=useState(1);
+ const episodes=[
+  ['The Legend of the Big Red Chicken','Lost and Found','Hic-Boom-Ohh','Dora Wants to Visit the Beach','We All Scream for Ice Cream','Choo Choo','Treasure Island','Three Little Piggies','The Big River','Berry Hunt'],
+  ['The Big Storm','Boots Toy Fire Truck','The Magic Stick','The Missing Piece','Lost Squeaky','Rojo the Firetruck','Lost Map','El Día de las Madres','The Golden Explorers','A Present for Santa'],
+  ['Book of Rhymes','Trucks in Trouble','The Sun and Red Rooster','A Metal Robot','Benny the Potato','Space Creatures','The Lost City','Animal Rescue Shelter','Save the Puppy','King and Magic Crown'],
+  ['Star Catcher','Family Dinner','Dora’s Present','The Fast Swiper','La Maestra de Música','Daisy, La Quinceañera','Save Diego','Baby Jaguar’s Roar','A Crown for King Juan el Bobo','Dora’s Got a Puppy'],
+  ['Dora’s Jack-in-the-Box','Bark, Bark to Play Park','Dora Saves Three Kings Day','Isa’s Unicorn Flowers','Benny’s Big Race','First Day of School','The Backpack Parade','Bouncy Boots','The Mayan Adventure','Dora Saves the Three Little Piggies']
  ];
+ const link='https://www.tataplaybinge.com/watch/shows/dora-the-explorer/31200';
  return <section className="space-y-5 pb-12">
-  <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">Dora & Bujji Kids TV</h2><p className="mt-2 text-sm">Official Dora & Friends full-episode collections. Video quality and availability are controlled by YouTube.</p></div>
-  <h3 className="font-bold text-xl">Watch free official collections</h3>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{videos.map(v=><article key={v.id} className="bg-white border rounded-2xl overflow-hidden"><img alt="" loading="lazy" className="w-full aspect-video object-cover" src={'https://img.youtube.com/vi/'+v.id+'/hqdefault.jpg'}/><div className="p-4"><h4 className="font-bold">{v.title}</h4><p className="text-sm text-slate-500 mt-1">{v.detail}</p><button onClick={()=>setPlaying(v.id)} className="mt-3 bg-purple-700 text-white rounded-xl px-4 py-2">Watch in Koala</button><a className="ml-3 text-sm text-purple-700 underline" target="_blank" rel="noopener noreferrer" href={'https://www.youtube.com/watch?v='+v.id}>Open official video</a></div></article>)}</div>
-  <div className="bg-white border rounded-2xl p-5"><h3 className="font-bold text-xl">Browse episodes by series</h3><div className="flex gap-2 mt-3"><button onClick={()=>setSeason('classic')} className={'rounded-xl px-4 py-2 '+(season==='classic'?'bg-purple-700 text-white':'border')}>Classic · 8 seasons</button><button onClick={()=>setSeason('new')} className={'rounded-xl px-4 py-2 '+(season==='new'?'bg-purple-700 text-white':'border')}>DORA 2024</button></div><p className="text-sm text-slate-600 mt-3">{season==='classic'?'Original Dora the Explorer — season and episode guide on Paramount+.':'New DORA series — episodes organized by season on Paramount+.'} Subscription and regional availability may apply.</p><a className="inline-block mt-3 text-purple-700 font-semibold underline" target="_blank" rel="noopener noreferrer" href={season==='classic'?'https://www.paramountplus.com/shows/dora-the-explorer/':'https://www.paramountplus.com/shows/dora/'}>View official episode list</a></div>
-  {playing&&<div role="dialog" aria-modal="true" aria-label="Dora video" className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><div className="bg-white rounded-2xl p-4 w-full max-w-4xl"><button onClick={()=>setPlaying(null)} className="mb-3 rounded-xl bg-slate-100 px-4 py-2">Close video</button><iframe title="Official Dora & Friends video" className="w-full aspect-video bg-black" src={'https://www.youtube-nocookie.com/embed/'+playing+'?autoplay=1'} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen/><p className="mt-2 text-xs text-slate-500">If embedding is restricted, use Open official video.</p></div></div>}
+  <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">டோரா & புஜ்ஜி — தமிழ்</h2><p className="mt-2 text-sm">Dora the Explorer · Tamil audio listed by official streaming provider · Episode guide</p></div>
+  <p className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-950">தமிழ் audio-வில் பார்க்க Tata Play Binge / JioHotstar போன்ற licensed service தேவைப்படலாம். இது Koala-வில் நேரடியாக stream ஆகாது. இந்தியா வெளியே கிடைப்பது உறுதி செய்யப்படவில்லை.</p>
+  <div className="flex gap-2 overflow-x-auto">{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setSeason(n)} className={'shrink-0 rounded-xl px-4 py-2 '+(season===n?'bg-purple-700 text-white':'bg-white border')}>Season {n}</button>)}</div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{episodes[season-1].map((name,i)=><article key={name} className="bg-white border rounded-xl p-4 flex justify-between items-center gap-3"><div><h3 className="font-semibold">Episode {i+1}: {name}</h3><p className="text-xs text-slate-500">Tamil audio option listed by provider · ~24 min</p></div><a href={link} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-purple-700 text-white px-3 py-2 text-sm">Watch officially</a></article>)}</div>
+  <p className="text-sm text-slate-500">Additional seasons and the full licensed episode list are available on the provider website. No unauthorized uploads or unverified Tamil YouTube embeds.</p>
  </section>;
 };
 StorageService.initialize();

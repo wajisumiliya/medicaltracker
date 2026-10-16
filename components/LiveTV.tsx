@@ -14,7 +14,7 @@ let hlsScriptPromise:Promise<HlsConstructor>|null=null;
 const loadHls=():Promise<HlsConstructor>=>{
  if(window.Hls)return Promise.resolve(window.Hls);
  if(hlsScriptPromise)return hlsScriptPromise;
- hlsScriptPromise=new Promise((resolve,reject)=>{
+ hlsScriptPromise=new Promise<HlsConstructor>((resolve,reject)=>{
   const script=document.createElement('script');
   script.src='https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js';
   script.async=true;

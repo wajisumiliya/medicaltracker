@@ -1,4 +1,4 @@
-import React,{useEffect,useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {ExternalLink,Heart,Search,RefreshCw,Radio} from 'lucide-react';
 type Channel={id:string;name:string;country:string;categories:string[];is_nsfw?:boolean;closed?:string|null;website?:string|null};
 type Stream={channel:string|null;url:string;labels?:string[]};
@@ -7,6 +7,57 @@ const groups=['All','Entertainment','Series / General','Movies','Kids','News','S
 const categoryMap:Record<string,string[]>={'Entertainment':['entertainment'],'Series / General':['general','series'],'Movies':['movies'],'Kids':['kids','animation'],'News':['news'],'Sports':['sports'],'Music':['music'],'Documentary':['documentary'],'Education':['education'],'Religious':['religious'],'Lifestyle':['lifestyle','cooking','travel']};
 const langs=[['All',''],['Tamil','tamil'],['Malayalam','malayalam'],['Hindi','hindi'],['English','english'],['Malaysia','MY'],['India','IN'],['Worldwide','world']];
 const safeUrl=(url:string)=>{try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:null}catch{return null}};
+type HlsInstance={loadSource:(url:string)=>void;attachMedia:(video:HTMLVideoElement)=>void;on:(event:string,callback:(event:string,data:{fatal?:boolean;details?:string})=>void)=>void;destroy:()=>void};
+type HlsConstructor={new(config?:Record<string,unknown>):HlsInstance;isSupported:()=>boolean;Events:{ERROR:string}};
+declare global {interface Window {Hls?:HlsConstructor}}
+let hlsScriptPromise:Promise<HlsConstructor>|null=null;
+const loadHls=():Promise<HlsConstructor>=>{
+ if(window.Hls)return Promise.resolve(window.Hls);
+ if(hlsScriptPromise)return hlsScriptPromise;
+ hlsScriptPromise=new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js';
+  script.async=true;
+  script.onload=()=>window.Hls?resolve(window.Hls):reject(new Error('HLS library unavailable'));
+  script.onerror=()=>reject(new Error('Could not download HLS player'));
+  document.head.appendChild(script);
+ }).catch(e=>{hlsScriptPromise=null;throw e});
+ return hlsScriptPromise;
+};
+const HlsVideo:React.FC<{url:string}>=({url})=>{
+ const videoRef=useRef<HTMLVideoElement>(null);
+ const [error,setError]=useState('');
+ const [status,setStatus]=useState('Loading stream…');
+ useEffect(()=>{
+  let disposed=false;
+  let instance:HlsInstance|undefined;
+  const video=videoRef.current;
+  if(!video)return;
+  setError('');setStatus('Loading stream…');
+  const start=async()=>{
+   try{
+    const isHls=/\\.m3u8(?:[?#]|$)/i.test(url);
+    if(isHls&&video.canPlayType('application/vnd.apple.mpegurl')){
+     video.src=url;
+    }else if(isHls){
+     const Hls=await loadHls();
+     if(disposed)return;
+     if(!Hls.isSupported())throw new Error('HLS playback is not supported on this browser');
+     instance=new Hls({enableWorker:true,lowLatencyMode:true});
+     instance.on(Hls.Events.ERROR,(_event,data)=>{if(data.fatal){setError('This channel could not be played. It may be offline, geo-blocked, or disallow browser playback.');setStatus('')}})
+     instance.loadSource(url);
+     instance.attachMedia(video);
+    }else{
+     video.src=url;
+    }
+    if(!disposed)setStatus('Press play to watch live TV');
+   }catch(e){if(!disposed){setError(e instanceof Error?e.message:'Playback unavailable');setStatus('')}}
+  };
+  start();
+  return ()=>{disposed=true;instance?.destroy();video.pause();video.removeAttribute('src');video.load()};
+ },[url]);
+ return <div><video ref={videoRef} controls playsInline preload="none" className="w-full aspect-video bg-black rounded-2xl" onPlaying={()=>setStatus('')} onError={()=>{setError('Stream playback failed. Try the external link or another channel.');setStatus('')}}/>{status&&!error&&<p role="status" className="mt-2 text-xs text-slate-500">{status}</p>}{error&&<p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}</div>;
+};
 export const LiveTV:React.FC=()=>{
  const [channels,setChannels]=useState<Channel[]>([]);
  const [streams,setStreams]=useState<Stream[]>([]);
@@ -40,6 +91,6 @@ export const LiveTV:React.FC=()=>{
  return <div className="space-y-5 pb-10"><section className="rounded-[2rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-900 p-6 md:p-9 text-white shadow-xl"><div className="flex items-center gap-3"><Radio size={30} className="text-pink-300"/><div><p className="text-xs font-bold tracking-widest text-violet-200 uppercase">Koala Entertainment</p><h2 className="text-3xl md:text-4xl font-black">Live TV</h2></div></div><p className="mt-3 text-sm text-slate-200">Explore publicly listed live channels by category. Availability depends on broadcasters and your region.</p></section>
  <div className="rounded-3xl bg-white p-4 md:p-6 border border-slate-100 space-y-4"><div className="flex flex-wrap gap-2 items-center"><label className="relative flex-1 min-w-48"><Search size={17} className="absolute top-3 left-3 text-slate-400"/><input value={search} onChange={e=>{setSearch(e.target.value);setPage(0)}} placeholder="Search channels..." className="w-full border border-slate-200 rounded-xl py-2.5 pl-10 pr-3 text-sm"/></label><select aria-label="Language or country" value={region} onChange={e=>{setRegion(e.target.value);setPage(0)}} className="border border-slate-200 rounded-xl p-2.5 text-sm">{langs.map(([name])=><option key={name}>{name}</option>)}</select><button onClick={()=>setOnlyFavorites(v=>!v)} aria-pressed={onlyFavorites} className={'rounded-xl px-3 py-2.5 text-sm flex gap-2 items-center '+(onlyFavorites?'bg-pink-100 text-pink-800':'bg-slate-100 text-slate-700')}><Heart size={16}/>Favorites</button><button onClick={reload} aria-label="Refresh channels" className="rounded-xl bg-slate-100 p-2.5"><RefreshCw size={17}/></button></div><div className="flex gap-2 overflow-x-auto pb-2">{groups.map(g=><button key={g} onClick={()=>{setCategory(g);setPage(0)}} aria-pressed={category===g} className={'shrink-0 px-4 py-2 rounded-full text-xs font-bold '+(category===g?'bg-indigo-700 text-white':'bg-slate-100 text-slate-600')}>{g}</button>)}</div></div>
  {loading?<p role="status" className="p-6">Loading TV channel directory…</p>:error?<p role="alert" className="p-5 rounded-2xl bg-rose-50 text-rose-700">{error}</p>:<><p className="text-sm text-slate-500">{filtered.length} listed channels with stream links · Showing {Math.min(filtered.length,page*48+1)}–{Math.min(filtered.length,(page+1)*48)}</p><div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">{filtered.slice(page*48,(page+1)*48).map(c=><div key={c.id} className="rounded-2xl border border-slate-100 bg-white p-4 flex flex-col gap-3 shadow-sm"><div className="flex items-start justify-between gap-2"><div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl">📺</div><button aria-label={'Favorite '+c.name} onClick={()=>toggle(c.id)} className={favorites.includes(c.id)?'text-pink-600':'text-slate-300'}><Heart size={20} fill={favorites.includes(c.id)?'currentColor':'none'}/></button></div><div className="flex-1"><p className="font-bold text-sm text-slate-800 line-clamp-2">{c.name}</p><p className="text-xs text-slate-500 mt-1">{c.country} · {c.categories.join(', ')||'TV'}</p></div><button onClick={()=>setSelected(c)} className="bg-indigo-700 text-white rounded-xl px-3 py-2 text-sm font-bold">Watch / Open</button></div>)}</div><div className="flex justify-center items-center gap-4"><button disabled={page===0} onClick={()=>setPage(p=>p-1)} className="disabled:opacity-30 rounded-xl bg-white px-4 py-2">Previous</button><span className="text-sm">{page+1} / {Math.max(1,Math.ceil(filtered.length/48))}</span><button disabled={(page+1)*48>=filtered.length} onClick={()=>setPage(p=>p+1)} className="disabled:opacity-30 rounded-xl bg-white px-4 py-2">Next</button></div></>}
- {selected&&<div role="dialog" aria-modal="true" aria-label="Live TV channel" className="fixed inset-0 z-[100] bg-slate-950/80 p-4 flex items-center justify-center"><div className="w-full max-w-3xl rounded-3xl bg-white p-5 space-y-4"><div className="flex justify-between items-center gap-3"><h3 className="font-bold text-xl">{selected.name}</h3><button onClick={()=>setSelected(null)} className="rounded-xl bg-slate-100 px-4 py-2">Close</button></div>{stream&&<video key={stream.url} src={safeUrl(stream.url)||undefined} controls playsInline className="w-full aspect-video bg-black rounded-2xl" onError={e=>{e.currentTarget.title='This stream may not play in your browser.'}}/>}<p className="text-xs text-slate-500">Some streams require a compatible HLS player or are geo-restricted. An external stream may fail even when listed.</p><div className="flex flex-wrap gap-3">{stream&&<a href={safeUrl(stream.url)||'#'} target="_blank" rel="noopener noreferrer" className="bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm inline-flex items-center gap-2">Open stream <ExternalLink size={15}/></a>}{selected.website&&safeUrl(selected.website)&&<a href={safeUrl(selected.website)!} target="_blank" rel="noopener noreferrer" className="border px-4 py-2 rounded-xl text-sm">Official website</a>}</div></div></div>}
+ {selected&&<div role="dialog" aria-modal="true" aria-label="Live TV channel" className="fixed inset-0 z-[100] bg-slate-950/80 p-4 flex items-center justify-center"><div className="w-full max-w-3xl rounded-3xl bg-white p-5 space-y-4"><div className="flex justify-between items-center gap-3"><h3 className="font-bold text-xl">{selected.name}</h3><button onClick={()=>setSelected(null)} className="rounded-xl bg-slate-100 px-4 py-2">Close</button></div>{stream&&<HlsVideo key={stream.url} url={safeUrl(stream.url)!}/>}<p className="text-xs text-slate-500">HLS (.m3u8) playback is supported where the browser and stream allow it. Some channels are offline, geo-restricted, or blocked by CORS.</p><div className="flex flex-wrap gap-3">{stream&&<a href={safeUrl(stream.url)||'#'} target="_blank" rel="noopener noreferrer" className="bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm inline-flex items-center gap-2">Open stream <ExternalLink size={15}/></a>}{selected.website&&safeUrl(selected.website)&&<a href={safeUrl(selected.website)!} target="_blank" rel="noopener noreferrer" className="border px-4 py-2 rounded-xl text-sm">Official website</a>}</div></div></div>}
  <p className="text-xs text-slate-500">Directory data: iptv-org community API. Listed streams are not guaranteed to work or be licensed in every region. Paid/DRM channels are not bypassed. No medical data is sent to the TV directory.</p></div>
 };

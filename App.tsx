@@ -43,6 +43,41 @@ const Movies:React.FC=()=>{
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
  const [trailer,setTrailer]=useState<string|null>(null);
+ const [freePage,setFreePage]=useState(1);
+ const [freeMovies,setFreeMovies]=useState<Array<{id:string;title:string;year:string;license:string;video:string}>>([]);
+ const [freeLoading,setFreeLoading]=useState(false);
+ const [freeError,setFreeError]=useState('');
+ const [freeSelected,setFreeSelected]=useState<{title:string;video:string;license:string}|null>(null);
+ useEffect(()=>{
+  const ctrl=new AbortController();
+  const load=async()=>{
+   setFreeLoading(true);setFreeError('');
+   try{
+    const params=new URLSearchParams({q:'mediatype:movies AND (collection:feature_films OR subject:"feature film") AND (licenseurl:*creativecommons.org* OR licenseurl:*publicdomain*)',rows:'30',page:String(freePage),output:'json'});
+    ['identifier','title','year','licenseurl'].forEach(v=>params.append('fl[]',v));
+    const r=await fetch('https://archive.org/advancedsearch.php?'+params,{signal:ctrl.signal});
+    if(!r.ok)throw Error('Archive search unavailable');
+    const data=await r.json();
+    const docs=(data.response?.docs||[]).filter((m:{identifier:string})=>/^[a-zA-Z0-9_.-]+$/.test(m.identifier)).slice(0,24);
+    const batches=await Promise.all(docs.map(async(m:{identifier:string;title?:string;year?:string;licenseurl?:string})=>{
+     try{
+      const r=await fetch('https://archive.org/metadata/'+encodeURIComponent(m.identifier),{signal:ctrl.signal});
+      if(!r.ok)return null;
+      const d=await r.json();
+      const files=Array.isArray(d.files)?d.files:[];
+      const parseDuration=(v:unknown)=>{const t=String(v||'');if(/^\d+(?:\.\d+)?$/.test(t))return Number(t);const parts=t.split(':').map(Number);return parts.length>1&&parts.every(Number.isFinite)?parts.reduce((a,n)=>a*60+n,0):0};
+      const video=files.find((v:{name?:string;length?:string;format?:string;size?:string;width?:string;height?:string})=>/\.(mp4|webm)$/i.test(v.name||'')&&parseDuration(v.length)>=3600&&Number(v.size||0)>150000000&&!/sample|trailer|preview|clip/i.test(v.name||''));
+      const license=String(d.metadata?.licenseurl||m.licenseurl||'');
+      if(!video||!license.includes('creativecommons.org/'))return null;
+      return {id:m.identifier,title:String(d.metadata?.title||m.title||m.identifier),year:String(m.year||''),license,video:'https://archive.org/download/'+encodeURIComponent(m.identifier)+'/'+encodeURIComponent(video.name)};
+     }catch{return null}
+    }));
+    if(!ctrl.signal.aborted)setFreeMovies(batches.filter((v):v is {id:string;title:string;year:string;license:string;video:string}=>v!==null));
+   }catch{if(!ctrl.signal.aborted)setFreeError('Licensed film discovery is temporarily unavailable.')}
+   finally{if(!ctrl.signal.aborted)setFreeLoading(false)}
+  };load();return()=>ctrl.abort()
+ },[freePage]);
+
  const [selected,setSelected]=useState<LicensedMovie|null>(null);
  const [favorites,setFavorites]=useState<number[]>(()=>{try{const v=JSON.parse(localStorage.getItem('koala_movie_favorites_v2')||'[]');return Array.isArray(v)?v:[]}catch{return []}});
  useEffect(()=>{localStorage.setItem('koala_movie_favorites_v2',JSON.stringify(favorites))},[favorites]);
@@ -78,6 +113,8 @@ const Movies:React.FC=()=>{
  {error&&<p role="alert" className="rounded-xl bg-rose-50 text-rose-700 p-3">{error}</p>}
  {loading?<p>Loading movies…</p>:<div className="grid grid-cols-2 md:grid-cols-4 gap-4">{results.map(m=><article key={m.id} className="bg-white border rounded-2xl overflow-hidden">{m.poster_path?<img loading="lazy" alt={m.title+' poster'} src={'https://image.tmdb.org/t/p/w342'+m.poster_path} className="w-full aspect-[2/3] object-cover"/>:<div className="aspect-[2/3] bg-slate-200 flex items-center justify-center text-sm">No poster</div>}<div className="p-3"><h3 className="font-bold text-sm">{m.title}</h3><p className="text-xs text-slate-500">{m.release_date?.slice(0,4)||'Unknown year'} · ★ {m.vote_average?.toFixed(1)||'—'}</p><div className="flex gap-2 mt-3"><button onClick={()=>openTrailer(m.id)} className="bg-indigo-700 text-white rounded-xl p-2 text-xs flex-1">Trailer</button><button onClick={()=>toggle(m.id)} aria-label="Toggle favorite" className="border rounded-xl px-3">{favorites.includes(m.id)?'♥':'♡'}</button></div><p className="text-xs text-slate-500 mt-2">Full movie playback not available from TMDb</p></div></article>)}</div>}
  {total>20&&<div className="flex items-center justify-center gap-4"><button disabled={page<=1||loading} onClick={()=>setPage(v=>v-1)} className="border rounded-xl px-4 py-2 disabled:opacity-40">Previous</button><span>Page {page} / {Math.min(500,Math.ceil(total/20))}</span><button disabled={page>=Math.min(500,Math.ceil(total/20))||loading} onClick={()=>setPage(v=>v+1)} className="border rounded-xl px-4 py-2 disabled:opacity-40">Next</button></div>}
+ <div className="rounded-2xl border bg-white p-4 space-y-3"><h3 className="text-xl font-bold">Free full-length film discovery</h3><p className="text-sm text-slate-600">Automatically searches films with Creative Commons license metadata, a video file over 60 minutes, and a substantial file size. Uploader licenses and actual resolution are not independently verified; some titles may be older or unavailable.</p>{freeError&&<p role="alert" className="text-rose-700">{freeError}</p>}{freeLoading?<p>Checking full-length video files…</p>:<div className="grid grid-cols-2 md:grid-cols-4 gap-3">{freeMovies.map(m=><article key={m.id} className="rounded-xl border overflow-hidden"><img loading="lazy" alt="" className="aspect-[3/4] object-cover w-full" src={'https://archive.org/services/img/'+m.id}/><div className="p-3"><h4 className="font-semibold text-sm">{m.title}</h4><p className="text-xs text-slate-500">{m.year} · License metadata available</p><button onClick={()=>setFreeSelected(m)} className="mt-2 rounded-lg bg-indigo-700 text-white px-3 py-2">Play full film</button></div></article>)}</div>}{!freeLoading&&!freeMovies.length&&<p className="text-sm">No matching full-length licensed files found on this page.</p>}<div className="flex gap-3 items-center"><button disabled={freePage===1||freeLoading} onClick={()=>setFreePage(v=>Math.max(1,v-1))} className="border rounded-xl px-3 py-2 disabled:opacity-40">Previous</button><span>Discovery page {freePage}</span><button disabled={freeLoading} onClick={()=>setFreePage(v=>v+1)} className="border rounded-xl px-3 py-2 disabled:opacity-40">More films</button></div></div>
+ {freeSelected&&<div role="dialog" aria-modal="true" aria-label={freeSelected.title} className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><div className="bg-white rounded-2xl p-4 w-full max-w-4xl"><button onClick={()=>setFreeSelected(null)} className="mb-3 rounded-xl bg-slate-100 px-4 py-2">Close film</button><h3 className="font-bold mb-2">{freeSelected.title}</h3><video controls playsInline preload="metadata" className="w-full aspect-video bg-black" src={freeSelected.video}/><a className="text-sm text-indigo-700 underline mt-2 block" href={freeSelected.license} target="_blank" rel="noopener noreferrer">View uploader-provided license</a></div></div>}
  <div className="rounded-2xl border bg-white p-4"><h3 className="font-bold">Authorized in-app movies</h3><p className="text-sm text-slate-500">Only independently identified, legally shareable films appear below. Availability depends on the source.</p><div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">{APPROVED_MOVIES.map(m=><article key={m.id} className="border rounded-xl p-3"><h4 className="font-semibold">{m.title}</h4><p className="text-xs text-slate-500">{m.year} · {m.quality}</p><button onClick={()=>setSelected(m)} className="mt-2 bg-indigo-700 text-white rounded-lg px-3 py-2">Watch film</button></article>)}</div></div>
  {trailer&&<div role="dialog" aria-modal="true" aria-label="Movie trailer" className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><div className="bg-white rounded-2xl p-4 w-full max-w-4xl"><button onClick={()=>setTrailer(null)} className="mb-3 rounded-xl bg-slate-100 px-4 py-2">Close trailer</button><iframe title="Movie trailer" src={'https://www.youtube-nocookie.com/embed/'+encodeURIComponent(trailer)} allow="autoplay; fullscreen; encrypted-media" allowFullScreen className="w-full aspect-video bg-black"/></div></div>}
  {selected&&<div role="dialog" aria-modal="true" aria-label={selected.title} className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><div className="bg-white rounded-2xl p-4 w-full max-w-4xl"><button onClick={()=>setSelected(null)} className="mb-3 rounded-xl bg-slate-100 px-4 py-2">Close movie</button><h3 className="font-bold mb-2">{selected.title}</h3>{selected.provider==='commons'?<video controls playsInline preload="metadata" className="w-full aspect-video bg-black" src={'https://commons.wikimedia.org/wiki/Special:Redirect/file/'+encodeURIComponent(selected.videoId)}/>:<iframe title={selected.title} src={'https://player.vimeo.com/video/'+encodeURIComponent(selected.videoId)} allow="autoplay; fullscreen" allowFullScreen className="w-full aspect-video bg-black"/>}<p className="text-xs text-slate-500 mt-2">{selected.rightsNote}</p></div></div>}

@@ -29,27 +29,10 @@ const dailyThemes=[
  {name:'Sunshine',page:'#fffdf0',header:'#fff7d6',hero:'linear-gradient(110deg,#fef3c7,#fffbeb,#fce7f3)',accent:'#a16207'}
 ];
 const themeForDate=(date:string)=>{const [y,m,d]=date.split('-').map(Number);const day=Math.floor(Date.UTC(y,m-1,d)/86400000);return dailyThemes[((day%dailyThemes.length)+dailyThemes.length)%dailyThemes.length];};
-const DoraKids:React.FC=()=>{
- const [season,setSeason]=useState(1);
- const seasons=[
-  {url:'https://www.tataplaybinge.com/watch/series/dora-the-explorer-season-1/52321',episodes:['The Legend of the Big Red Chicken','Lost and Found','Hic-Boom-Ohh','Dora Wants to Visit the Beach','We All Scream for Ice Cream','Choo Choo','Treasure Island','Three Little Piggies','The Big River','Berry Hunt']},
-  {url:'https://www.tataplaybinge.com/watch/series/dora-the-explorer-season-2/52934',episodes:[]},
-  {url:'https://www.tataplaybinge.com/watch/series/dora-the-explorer-season-3/51721',episodes:['Book of Rhymes','Trucks in Trouble','The Sun and Red Rooster','A Metal Robot','Benny the Potato','Space Creatures','The Lost City','Animal Rescue Shelter','Save the Puppy','King and Magic Crown']},
-  {url:'https://www.tataplaybinge.com/watch/series/dora-the-explorer-season-4/51599',episodes:['Star Catcher','Family Dinner','Dora’s Present','The Fast Swiper','La Maestra de Música','Daisy, La Quinceañera','Save Diego','Baby Jaguar’s Roar','A Crown for King Juan el Bobo','Dora’s Got a Puppy']},
-  {url:'https://www.tataplaybinge.com/watch/series/dora-the-explorer-season-5/51488',episodes:['Dora’s Jack-in-the-box','Bark, Bark to Play Park','Dora Saves Three Kings Day','Isa’s Unicorn Flowers','Benny’s Big Race','First Day of School','The Backpack Parade','Bouncy Boots','The Mayan Adventure','Dora Saves the Three Little Piggies']}
- ];
- const chosen=seasons[season-1];
- return <section className="space-y-5 pb-12">
- <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">டோரா & புஜ்ஜி — தமிழ்</h2><p className="mt-2 text-sm">Classic Dora the Explorer · தமிழ் audio பட்டியலிடப்பட்டுள்ள official episode guide</p></div>
- <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">தமிழ் audio-வை Tata Play Binge பட்டியலிடுகிறது. ஆனால் Koala-வில் நேரடியாக play செய்ய உரிமம் பெற்ற embed link கிடைக்கவில்லை. Official service-ல் login தேவைப்படலாம்; Malaysia-வில் கிடைப்பது உறுதி செய்யப்படவில்லை. இது Tamil-dubbed video player அல்ல.</div>
- <div className="flex gap-2 overflow-x-auto">{seasons.map((v,i)=><button key={i} onClick={()=>setSeason(i+1)} className={'shrink-0 rounded-xl px-4 py-2 '+(season===i+1?'bg-purple-700 text-white':'bg-white border')}>Season {i+1}</button>)}</div>
- <h3 className="text-xl font-bold">Season {season} · Episodes</h3>
- <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{chosen.episodes.map((name,i)=><article key={name} className="rounded-xl bg-white border p-4 flex justify-between items-center gap-3"><div><h4 className="font-semibold">Episode {i+1} · {name}</h4><p className="text-xs text-slate-500">Official listing · Tamil audio option · approx. 24 minutes</p></div><a className="shrink-0 bg-purple-700 text-white rounded-lg px-3 py-2 text-sm" href={chosen.url} target="_blank" rel="noopener noreferrer">Watch on provider</a></article>)}</div>
- {!chosen.episodes.length&&<p className="text-sm text-slate-600">Season {season} episode names are not yet verified. View the official list below.</p>}
- <a href={chosen.url} target="_blank" rel="noopener noreferrer" className="inline-block rounded-xl bg-purple-700 text-white px-5 py-3">Open Season {season} on Tata Play Binge</a>
- <p className="text-xs text-slate-500">Episode names and audio options are from the provider listing. Streaming requires the provider's authorization; no copyrighted episodes are hosted by Koala.</p>
+const DoraKids:React.FC=()=> <section className="space-y-5 pb-12">
+ <div className="rounded-3xl bg-gradient-to-r from-purple-950 to-pink-700 p-7 text-white"><h2 className="text-3xl font-black">டோரா & புஜ்ஜி — தமிழ்</h2><p className="mt-2 text-sm">Chutti TV-யில் வந்த Dora & Bujji தமிழ் episodes</p></div>
+ <div className="rounded-2xl bg-white border p-6 space-y-3"><h3 className="font-bold text-xl">தமிழ் episodes தற்போது கிடைக்கவில்லை</h3><p className="text-slate-600 text-sm">முன்பு காட்டிய streaming provider links Access Denied என வந்ததால் நீக்கப்பட்டுள்ளன. Malaysia-வில் இயங்கும், தமிழ் audio கொண்ட, சட்டபூர்வமாக embed செய்ய அனுமதிக்கப்பட்ட full episodes இன்னும் உறுதிப்படுத்தப்படவில்லை.</p><p className="text-slate-600 text-sm">உறுதிப்படுத்தப்படாத video links அல்லது English episodes இங்கே காட்டப்படாது.</p></div>
  </section>;
-};
 StorageService.initialize();
 const App:React.FC=()=>{const [auth,setAuth]=useState(!!StorageService.getUserData()?.isAuthenticated);const [name,setName]=useState('');const [pin,setPin]=useState('');const [error,setError]=useState('');const [tab,setTab]=useState('dashboard');const [profiles,setProfiles]=useState<Profile[]>(StorageService.getProfiles());const [selectedId,setSelectedId]=useState(StorageService.getSelectedProfileId());const [cloudStatus,setCloudStatus]=useState<CloudStatus>('offline');const [cloudUser,setCloudUser]=useState<FirebaseUser|null>(null);const [cloudRevision,setCloudRevision]=useState(0);
  const [themeDate,setThemeDate]=useState(()=>localDateString());

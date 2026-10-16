@@ -30,7 +30,7 @@ const dailyThemes=[
 ];
 const themeForDate=(date:string)=>{const [y,m,d]=date.split('-').map(Number);const day=Math.floor(Date.UTC(y,m-1,d)/86400000);return dailyThemes[((day%dailyThemes.length)+dailyThemes.length)%dailyThemes.length];};
 type LicensedMovie={id:string;title:string;language:string;year:number;quality:'HD'|'Full HD'|'4K';poster?:string;provider:'vimeo'|'commons';videoId:string;rightsNote:string};
-const APPROVED_MOVIES:ReadonlyArray<LicensedMovie>=[{id:'sita-sings-the-blues',title:'Sita Sings the Blues',language:'English',year:2008,quality:'HD',provider:'commons',videoId:'Sita Sings the Blues.webm',poster:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sita%20STB%20Poster.jpg',rightsNote:'Nina Paley, CC0 for the film; soundtrack has separate restrictions. Full 82-minute film, 720p via Wikimedia Commons.'}];
+const APPROVED_MOVIES:ReadonlyArray<LicensedMovie>=[{id:'sita-sings-the-blues',title:'Sita Sings the Blues',language:'English',year:2008,quality:'HD',provider:'commons',videoId:'Sita Sings the Blues.webm',poster:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sita%20STB%20Poster%20Agni%20A2.png',rightsNote:'Nina Paley, CC0 Wikimedia copy, 81m31s at 720p; copyrighted soundtrack removed from this file, so some audio is missing.'}];
 // Add a movie only after checking that it is a full-length film, the owner
 // authorizes playback in Koala, and Vimeo permits embedding on this domain.
 const Movies:React.FC=()=>{

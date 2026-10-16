@@ -88,6 +88,35 @@ function parseAIJson(output) {
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return json({ ok: true });
+    // Public TMDb catalog proxy. Secret TMDB_READ_TOKEN must be set in Worker settings.
+    // Only allow these fixed endpoints; never proxy arbitrary upstream URLs.
+    const url = new URL(request.url);
+    if (url.pathname === '/movies' || url.pathname === '/movies/videos') {
+      if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+      if (!env.TMDB_READ_TOKEN) return json({ error: 'TMDB_NOT_CONFIGURED' }, 503);
+      const page = Math.min(500, Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1));
+      const lang = url.searchParams.get('language') || 'ta';
+      const allowed = new Set(['ta','hi','en','ml','te','kn','bn','ja','ko','es','fr','zh']);
+      if (!allowed.has(lang)) return json({ error: 'Unsupported language' }, 400);
+      const query = (url.searchParams.get('query') || '').trim().slice(0, 100);
+      let endpoint;
+      if (url.pathname === '/movies/videos') {
+        const id = url.searchParams.get('id') || '';
+        if (!/^[0-9]{1,12}$/.test(id)) return json({ error: 'Invalid movie ID' }, 400);
+        endpoint = 'https://api.themoviedb.org/3/movie/' + id + '/videos';
+      } else if (query) {
+        const p = new URLSearchParams({query,page:String(page),include_adult:'false'});
+        endpoint = 'https://api.themoviedb.org/3/search/movie?' + p;
+      } else {
+        const p = new URLSearchParams({page:String(page),include_adult:'false',sort_by:'popularity.desc',with_original_language:lang});
+        endpoint = 'https://api.themoviedb.org/3/discover/movie?' + p;
+      }
+      try {
+        const upstream = await fetch(endpoint,{headers:{Authorization:'Bearer '+env.TMDB_READ_TOKEN,accept:'application/json'},cf:{cacheTtl:300,cacheEverything:true}});
+        if (!upstream.ok) return json({error:'Movie catalog unavailable'},502);
+        return new Response(await upstream.text(),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Cache-Control':'public, max-age=300'}});
+      } catch {return json({error:'Movie catalog temporarily unavailable'},502)}
+    }
     // Public, non-sensitive health check for checking routing without Firebase sign-in.
     if (request.method === 'GET') return json({ service: 'medicaltracker-ai', status: 'ok' });
     if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
